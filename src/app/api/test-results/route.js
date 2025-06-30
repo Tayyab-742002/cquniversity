@@ -113,14 +113,38 @@ function processStroopResults(results) {
  * @returns {Object} Processed metrics
  */
 function processTrailMakingResults(results) {
-  // Placeholder for Trail Making test processing
-  return {
-    timePartA: 0,
-    timePartB: 0,
-    errorsPartA: 0,
-    errorsPartB: 0,
-    bMinusA: 0
-  };
+  try {
+    // Parse results if it's a string
+    const data = typeof results === 'string' ? JSON.parse(results) : results;
+    
+    // Extract metrics from results
+    const partA = {
+      time: parseFloat((data.partA?.time || 0).toFixed(2)),
+      errors: data.partA?.errors || 0
+    };
+    
+    const partB = {
+      time: parseFloat((data.partB?.time || 0).toFixed(2)),
+      errors: data.partB?.errors || 0
+    };
+    
+    // Calculate B-A difference (a key metric for Trail Making Test)
+    const bMinusA = parseFloat((partB.time - partA.time).toFixed(2));
+    
+    return {
+      partA,
+      partB,
+      bMinusA
+    };
+  } catch (error) {
+    console.error('Error processing Trail Making results:', error);
+    return {
+      partA: { time: 0, errors: 0 },
+      partB: { time: 0, errors: 0 },
+      bMinusA: 0,
+      error: 'Failed to process results'
+    };
+  }
 }
 
 /**

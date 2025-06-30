@@ -25,7 +25,7 @@ const tests = [
     path: '/tests/trail-making',
     status: 'active',
     icon: 'LineChart',
-    implemented: false
+    implemented: true
   },
   {
     id: 'corsiBlocksTest',
@@ -107,10 +107,14 @@ export function getTestResultSchema(testId) {
     },
     trailMakingTest: {
       metrics: [
-        { name: 'timePartA', label: 'Time (Part A)', description: 'Time to complete Part A', format: 'time_s' },
-        { name: 'timePartB', label: 'Time (Part B)', description: 'Time to complete Part B', format: 'time_s' },
-        { name: 'errorsPartA', label: 'Errors (Part A)', description: 'Number of errors in Part A' },
-        { name: 'errorsPartB', label: 'Errors (Part B)', description: 'Number of errors in Part B' },
+        { name: 'partA', label: 'Part A', description: 'Results for Part A (connecting numbers)', nested: true, children: [
+          { name: 'time', label: 'Time', description: 'Time to complete Part A in seconds', format: 'time_s' },
+          { name: 'errors', label: 'Errors', description: 'Number of errors in Part A', format: 'count' }
+        ]},
+        { name: 'partB', label: 'Part B', description: 'Results for Part B (connecting numbers and letters)', nested: true, children: [
+          { name: 'time', label: 'Time', description: 'Time to complete Part B in seconds', format: 'time_s' },
+          { name: 'errors', label: 'Errors', description: 'Number of errors in Part B', format: 'count' }
+        ]},
         { name: 'bMinusA', label: 'B-A Difference', description: 'Difference between Part B and Part A times', format: 'time_s' }
       ],
       visualization: 'lineChart'
