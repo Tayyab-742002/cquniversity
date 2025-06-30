@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import axios from 'axios';
 
 // Import JsPsych plugins dynamically to avoid SSR issues
 let setupJsPsych, createJsPsychContainer, cleanupJsPsych;
 let htmlKeyboardResponse, htmlButtonResponse, preload, instructions;
 
-export default function StroopTest({ participantId }) {
+export default function StroopTest({ participantId, skipTutorial = false }) {
   const router = useRouter();
   const [status, setStatus] = useState('initializing'); // initializing, running, completed, error
   const [progress, setProgress] = useState(0);
@@ -71,10 +72,18 @@ export default function StroopTest({ participantId }) {
     // Create container for JsPsych
     createJsPsychContainer();
 
-    // Calculate total trials for progress tracking
+    // Define test parameters
     const practiceStimuliCount = 8;
     const testStimuliCount = 60;
-    const totalTrials = practiceStimuliCount + testStimuliCount + 5; // Adding 5 for instruction/transition screens
+    
+    // Calculate total trials for progress tracking
+    // When skipping tutorial, we have fewer screens but same number of test trials
+    const tutorialScreens = skipTutorial ? 2 : 5; // Intro screens with tutorial or quick start
+    const practiceTrials = skipTutorial ? 0 : practiceStimuliCount; // Practice trials if not skipping
+    const totalTrials = tutorialScreens + practiceTrials + testStimuliCount + 1; // +1 for final screen
+    
+    console.log(`Total trials: ${totalTrials} (Tutorial: ${tutorialScreens}, Practice: ${practiceTrials}, Test: ${testStimuliCount}, Final: 1)`);
+    
     let currentTrialIndex = 0;
 
     // Initialize JsPsych
@@ -83,15 +92,38 @@ export default function StroopTest({ participantId }) {
         try {
           // Get all data
           const data = jsPsych.data.get().json();
+          let parsedData;
           
-          // Import saveTestResults dynamically
-          const { saveTestResults } = await import('@/utils/saveTestResults');
+          try {
+            parsedData = JSON.parse(data);
+          } catch (parseError) {
+            console.error('Error parsing JSON data:', parseError);
+            // If parsing fails, use the raw string
+            parsedData = data;
+          }
           
-          // Save results to database
-          await saveTestResults(participantId, 'stroopTest', JSON.parse(data));
+          console.log('Saving test results...');
+          
+          // Check if participantId is valid
+          if (!participantId) {
+            throw new Error('No participant ID provided');
+          }
+          
+          // Ensure the data is properly formatted for MongoDB
+          const formattedData = Array.isArray(parsedData) ? parsedData : [parsedData];
+          
+          // Save results to database using API endpoint
+          const response = await axios.post('/api/test-results', {
+            participantId,
+            testId: 'stroopTest',
+            results: formattedData
+          });
+          
+          console.log('Test results saved:', response.data);
           
           // Update status
           setStatus('completed');
+          setProgress(100); // Ensure progress shows 100% when complete
           
           // Redirect to tests page after a delay
           setTimeout(() => {
@@ -99,7 +131,7 @@ export default function StroopTest({ participantId }) {
           }, 3000);
         } catch (err) {
           console.error('Error saving results:', err);
-          setError('Failed to save test results');
+          setError(`Failed to save test results: ${err.message || 'Unknown error'}. Please try again or contact support.`);
           setStatus('error');
         }
       },
@@ -107,6 +139,7 @@ export default function StroopTest({ participantId }) {
         // Update progress based on completed trials
         currentTrialIndex++;
         const progressPercentage = Math.round((currentTrialIndex / totalTrials) * 100);
+        console.log(`Trial ${currentTrialIndex}/${totalTrials} completed (${progressPercentage}%)`);
         setProgress(Math.min(progressPercentage, 100)); // Ensure it never exceeds 100%
       },
       display_element: 'jspsych-target',
@@ -177,57 +210,60 @@ export default function StroopTest({ participantId }) {
       auto_preload: true
     });
 
-    // Welcome screen
-    timeline.push({
-      type: htmlButtonResponse,
-      stimulus: `
-        <div class="p-4">
-          <h1 class="text-2xl font-bold mb-4">Stroop Test</h1>
-          <p class="mb-2">Welcome to the Stroop Test experiment.</p>
-          <p class="mb-4">This test will measure your cognitive interference - the delay in reaction time when processing conflicting information.</p>
-        </div>
-      `,
-      choices: ['Continue'],
-      button_html: '<button class="px-4 py-2 bg-primary text-primary-foreground rounded-md">%choice%</button>'
-    });
-
-    // Instructions
-    timeline.push({
-      type: instructions,
-      pages: [
-        `<div class="p-4">
-          <h2 class="text-xl font-bold mb-4">Instructions</h2>
-          <p class="mb-2">In this test, you will be shown words that are names of colors (like "RED" or "BLUE") displayed in different colored text.</p>
-          <p class="mb-2">Your task is to indicate the <strong>color of the text</strong>, NOT the word itself.</p>
-          <p class="mb-4">For example, if you see the word "RED" printed in blue ink, the correct answer is "blue".</p>
-        </div>`,
-        `<div class="p-4">
-          <h2 class="text-xl font-bold mb-4">Example</h2>
-          <p class="mb-4">Here's an example:</p>
-          <p class="stroop-stimulus mb-4" style="color: red;">BLUE</p>
-          <p class="mb-4">In this example, you would respond with "red" because the text color is red.</p>
-        </div>`,
-        `<div class="p-4">
-          <h2 class="text-xl font-bold mb-4">How to Respond</h2>
-          <p class="mb-2">You will respond by clicking on the button that corresponds to the color of the text.</p>
-          <p class="mb-4">Try to respond as quickly and accurately as possible.</p>
-          <div class="stroop-response-buttons">
-            <button class="stroop-response-button stroop-red">Red</button>
-            <button class="stroop-response-button stroop-blue">Blue</button>
-            <button class="stroop-response-button stroop-green">Green</button>
-            <button class="stroop-response-button stroop-yellow">Yellow</button>
+    // Add tutorial screens if not skipping
+    if (!skipTutorial) {
+      // Welcome screen
+      timeline.push({
+        type: htmlButtonResponse,
+        stimulus: `
+          <div class="p-4">
+            <h1 class="text-2xl font-bold mb-4">Stroop Test</h1>
+            <p class="mb-2">Welcome to the Stroop Test experiment.</p>
+            <p class="mb-4">This test will measure your cognitive interference - the delay in reaction time when processing conflicting information.</p>
           </div>
-        </div>`,
-        `<div class="p-4">
-          <h2 class="text-xl font-bold mb-4">Ready to Begin</h2>
-          <p class="mb-2">You will first do a few practice trials.</p>
-          <p class="mb-4">Click "Next" to begin the practice.</p>
-        </div>`
-      ],
-      show_clickable_nav: true,
-      button_label_previous: 'Previous',
-      button_label_next: 'Next'
-    });
+        `,
+        choices: ['Continue'],
+        button_html: '<button class="px-4 py-2 bg-primary text-primary-foreground rounded-md">%choice%</button>'
+      });
+
+      // Instructions
+      timeline.push({
+        type: instructions,
+        pages: [
+          `<div class="p-4">
+            <h2 class="text-xl font-bold mb-4">Instructions</h2>
+            <p class="mb-2">In this test, you will be shown words that are names of colors (like "RED" or "BLUE") displayed in different colored text.</p>
+            <p class="mb-2">Your task is to indicate the <strong>color of the text</strong>, NOT the word itself.</p>
+            <p class="mb-4">For example, if you see the word "RED" printed in blue ink, the correct answer is "blue".</p>
+          </div>`,
+          `<div class="p-4">
+            <h2 class="text-xl font-bold mb-4">Example</h2>
+            <p class="mb-4">Here's an example:</p>
+            <p class="stroop-stimulus mb-4" style="color: red;">BLUE</p>
+            <p class="mb-4">In this example, you would respond with "red" because the text color is red.</p>
+          </div>`,
+          `<div class="p-4">
+            <h2 class="text-xl font-bold mb-4">How to Respond</h2>
+            <p class="mb-2">You will respond by clicking on the button that corresponds to the color of the text.</p>
+            <p class="mb-4">Try to respond as quickly and accurately as possible.</p>
+            <div class="stroop-response-buttons">
+              <button class="stroop-response-button stroop-red">Red</button>
+              <button class="stroop-response-button stroop-blue">Blue</button>
+              <button class="stroop-response-button stroop-green">Green</button>
+              <button class="stroop-response-button stroop-yellow">Yellow</button>
+            </div>
+          </div>`,
+          `<div class="p-4">
+            <h2 class="text-xl font-bold mb-4">Ready to Begin</h2>
+            <p class="mb-2">You will first do a few practice trials.</p>
+            <p class="mb-4">Click "Next" to begin the practice.</p>
+          </div>`
+        ],
+        show_clickable_nav: true,
+        button_label_previous: 'Previous',
+        button_label_next: 'Next'
+      });
+    }
 
     // Define color-word combinations for the Stroop test
     const colors = ['red', 'blue', 'green', 'yellow'];
@@ -241,77 +277,89 @@ export default function StroopTest({ participantId }) {
       yellow: '#ecc94b'
     };
 
-    // Practice trials instructions
+    // Practice trials instructions or quick start message based on skipTutorial
     timeline.push({
       type: htmlButtonResponse,
-      stimulus: `
-        <div class="p-4">
-          <h2 class="text-xl font-bold mb-4">Practice Trials</h2>
-          <p class="mb-4">Let's start with a few practice trials.</p>
-          <p class="mb-2">Remember to respond to the <strong>color of the text</strong>, not the word itself.</p>
-        </div>
-      `,
-      choices: ['Start Practice'],
+      stimulus: skipTutorial
+        ? `<div class="p-4">
+            <h2 class="text-xl font-bold mb-4">Quick Start</h2>
+            <p class="mb-2">You will see color words (RED, BLUE, GREEN, YELLOW) displayed in different colored text.</p>
+            <p class="mb-4">Click the button that corresponds to the <strong>color of the text</strong>, not the word itself.</p>
+            <div class="stroop-response-buttons">
+              <button class="stroop-response-button stroop-red">Red</button>
+              <button class="stroop-response-button stroop-blue">Blue</button>
+              <button class="stroop-response-button stroop-green">Green</button>
+              <button class="stroop-response-button stroop-yellow">Yellow</button>
+            </div>
+          </div>`
+        : `<div class="p-4">
+            <h2 class="text-xl font-bold mb-4">Practice Trials</h2>
+            <p class="mb-4">Let's start with a few practice trials.</p>
+            <p class="mb-2">Remember to respond to the <strong>color of the text</strong>, not the word itself.</p>
+          </div>`,
+      choices: [skipTutorial ? 'Start Test' : 'Start Practice'],
       button_html: '<button class="px-4 py-2 bg-primary text-primary-foreground rounded-md">%choice%</button>'
     });
 
-    // Generate practice trials
-    const practiceTrials = [];
+    // Generate practice trials (skip if tutorial is skipped)
+    if (!skipTutorial) {
+      const practiceTrials = [];
 
-    for (let i = 0; i < practiceStimuliCount; i++) {
-      // Randomly select color and word
-      const colorIndex = Math.floor(Math.random() * colors.length);
-      const wordIndex = Math.floor(Math.random() * colorWords.length);
-      const color = colors[colorIndex];
-      const word = colorWords[wordIndex];
-      
-      // Create trial
-      const trial = {
+      for (let i = 0; i < practiceStimuliCount; i++) {
+        // Randomly select color and word
+        const colorIndex = Math.floor(Math.random() * colors.length);
+        const wordIndex = Math.floor(Math.random() * colorWords.length);
+        const color = colors[colorIndex];
+        const word = colorWords[wordIndex];
+        
+        // Create trial
+        const trial = {
+          type: htmlButtonResponse,
+          stimulus: `<div class="stroop-stimulus" style="color: ${colorCodes[color]};">${word}</div>`,
+          choices: ['Red', 'Blue', 'Green', 'Yellow'],
+          button_html: [
+            '<button class="stroop-response-button stroop-red">Red</button>',
+            '<button class="stroop-response-button stroop-blue">Blue</button>',
+            '<button class="stroop-response-button stroop-green">Green</button>',
+            '<button class="stroop-response-button stroop-yellow">Yellow</button>'
+          ],
+          data: {
+            task: 'stroop',
+            condition: 'practice',
+            color: color,
+            word: word,
+            congruent: color === word.toLowerCase()
+          },
+          on_finish: function(data) {
+            const correctResponse = colors.indexOf(color);
+            data.correct = data.response === correctResponse;
+          },
+          post_trial_gap: 500
+        };
+        
+        practiceTrials.push(trial);
+      }
+
+      // Add practice trials to timeline
+      timeline.push({
+        timeline: practiceTrials
+      });
+
+      // End of practice message
+      timeline.push({
         type: htmlButtonResponse,
-        stimulus: `<div class="stroop-stimulus" style="color: ${colorCodes[color]};">${word}</div>`,
-        choices: ['Red', 'Blue', 'Green', 'Yellow'],
-        button_html: [
-          '<button class="stroop-response-button stroop-red">Red</button>',
-          '<button class="stroop-response-button stroop-blue">Blue</button>',
-          '<button class="stroop-response-button stroop-green">Green</button>',
-          '<button class="stroop-response-button stroop-yellow">Yellow</button>'
-        ],
-        data: {
-          task: 'stroop',
-          condition: 'practice',
-          color: color,
-          word: word,
-          congruent: color === word.toLowerCase()
-        },
-        on_finish: function(data) {
-          const correctResponse = colors.indexOf(color);
-          data.correct = data.response === correctResponse;
-        },
-        post_trial_gap: 500
-      };
-      
-      practiceTrials.push(trial);
+        stimulus: `
+          <div class="p-4">
+            <h2 class="text-xl font-bold mb-4">Practice Complete</h2>
+            <p class="mb-4">Great job! You have completed the practice trials.</p>
+            <p class="mb-2">Now we will begin the actual test. It will be exactly the same, but longer.</p>
+            <p class="mb-4">Remember to respond as quickly and accurately as possible.</p>
+          </div>
+        `,
+        choices: ['Start Test'],
+        button_html: '<button class="px-4 py-2 bg-primary text-primary-foreground rounded-md">%choice%</button>'
+      });
     }
-
-    // Add practice trials to timeline
-    timeline.push({
-      timeline: practiceTrials
-    });
-
-    // End of practice message
-    timeline.push({
-      type: htmlButtonResponse,
-      stimulus: `
-        <div class="p-4">
-          <h2 class="text-xl font-bold mb-4">Practice Complete</h2>
-          <p class="mb-4">Great job! You have completed the practice trials.</p>
-          <p class="mb-2">Now we will begin the actual test. It will be exactly the same, but longer.</p>
-          <p class="mb-4">Remember to respond as quickly and accurately as possible.</p>
-        </div>
-      `,
-      choices: ['Start Test'],
-      button_html: '<button class="px-4 py-2 bg-primary text-primary-foreground rounded-md">%choice%</button>'
-    });
 
     // Generate test trials
     const testTrials = [];
@@ -446,12 +494,20 @@ export default function StroopTest({ participantId }) {
           </div>
           <h2 className="text-2xl font-bold mb-4">Error</h2>
           <p className="mb-4 text-destructive">{error || 'An error occurred while running the test.'}</p>
-          <button 
-            onClick={() => router.push('/tests')}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-md"
-          >
-            Return to Tests
-          </button>
+          <div className="flex flex-col sm:flex-row justify-center gap-3">
+            <button 
+              onClick={() => router.push('/tests')}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-md"
+            >
+              Return to Tests
+            </button>
+            <button 
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md"
+            >
+              Try Again
+            </button>
+          </div>
         </div>
       )}
 

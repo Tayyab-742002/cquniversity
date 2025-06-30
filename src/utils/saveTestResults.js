@@ -1,5 +1,4 @@
-import { connectToDatabase } from '@/lib/mongodb';
-import Participant from '@/models/Participant';
+import axios from 'axios';
 
 /**
  * Save test results for a participant
@@ -10,43 +9,13 @@ import Participant from '@/models/Participant';
  */
 export async function saveTestResults(participantId, testId, results) {
   try {
-    await connectToDatabase();
-    
-    // Find participant
-    const participant = await Participant.findById(participantId);
-    
-    if (!participant) {
-      throw new Error('Participant not found');
-    }
-    
-    // Process and calculate metrics based on test type
-    const processedResults = processTestResults(testId, results);
-    
-    // Create test result object
-    const testResult = {
+    const response = await axios.post('/api/test-results', {
+      participantId,
       testId,
-      completedAt: new Date(),
-      rawData: results,
-      metrics: processedResults
-    };
+      results
+    });
     
-    // Check if participant already has results for this test
-    const existingTestIndex = participant.testResults.findIndex(
-      result => result.testId === testId
-    );
-    
-    if (existingTestIndex >= 0) {
-      // Update existing test result
-      participant.testResults[existingTestIndex] = testResult;
-    } else {
-      // Add new test result
-      participant.testResults.push(testResult);
-    }
-    
-    // Save participant
-    await participant.save();
-    
-    return testResult;
+    return response.data.result;
   } catch (error) {
     console.error('Error saving test results:', error);
     throw error;
@@ -61,21 +30,8 @@ export async function saveTestResults(participantId, testId, results) {
  */
 export async function checkPreviousTestResult(participantId, testId) {
   try {
-    await connectToDatabase();
-    
-    // Find participant
-    const participant = await Participant.findById(participantId);
-    
-    if (!participant) {
-      throw new Error('Participant not found');
-    }
-    
-    // Find test result
-    const testResult = participant.testResults.find(
-      result => result.testId === testId
-    );
-    
-    return testResult || null;
+    const response = await axios.get(`/api/test-results/check?participantId=${participantId}&testId=${testId}`);
+    return response.data.result;
   } catch (error) {
     console.error('Error checking previous test result:', error);
     return null;

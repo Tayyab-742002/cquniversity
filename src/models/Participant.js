@@ -13,13 +13,18 @@ const testResultSchema = new mongoose.Schema({
   },
   rawData: {
     type: mongoose.Schema.Types.Mixed,
-    required: true
+    required: false,
+    default: {}
   },
   metrics: {
     type: mongoose.Schema.Types.Mixed,
-    required: true
+    required: false,
+    default: {}
   }
-}, { _id: false });
+}, { 
+  _id: false,
+  strict: false
+});
 
 // Define schema for participant
 const participantSchema = new mongoose.Schema({
@@ -59,7 +64,12 @@ const participantSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
-  testResults: [testResultSchema]
+  testResults: {
+    type: [testResultSchema],
+    default: []
+  }
+}, {
+  strict: false
 });
 
 // Create or get model
