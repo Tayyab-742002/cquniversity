@@ -1,36 +1,103 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# PsycoTest - Psychological Research Platform
+
+A web application for conducting psychological tests for research purposes. This platform allows participants to complete standard psychological tests including the Stroop Test, Trail-Making Test, Corsi Blocks Test, and Five-Points Test.
+
+## Features
+
+- Participant registration with IP address tracking to prevent duplicate submissions
+- Four standard psychological tests:
+  - Stroop Test
+  - Trail-Making Test
+  - Corsi Blocks Test
+  - Five-Points Test
+- MongoDB integration for data storage
+- JsPsych integration for psychological test implementation
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Node.js 18.x or later
+- MongoDB instance (local or cloud-based)
+
+### Installation
+
+1. Clone the repository
+   ```bash
+   git clone https://github.com/yourusername/psycotest.git
+   cd psycotest
+   ```
+
+2. Install dependencies
+   ```bash
+   npm install
+   ```
+
+3. Create a `.env.local` file in the root directory with the following content:
+   ```
+   MONGODB_URI=mongodb://localhost:27017/psycotest
+   ```
+   Replace the URI with your MongoDB connection string.
+
+4. Start the development server
+   ```bash
+   npm run dev
+   ```
+
+5. Open [http://localhost:3000](http://localhost:3000) with your browser to see the application.
+
+## Project Structure
+
+```
+psycotest/
+├── src/
+│   ├── app/                 # Next.js App Router
+│   │   ├── api/             # API routes
+│   │   ├── tests/           # Test pages
+│   │   ├── about/           # About page
+│   │   ├── page.js          # Home page
+│   │   └── layout.js        # Root layout
+│   ├── components/          # React components
+│   │   ├── forms/           # Form components
+│   │   ├── layout/          # Layout components
+│   │   └── tests/           # Test-specific components
+│   ├── hooks/               # Custom React hooks
+│   ├── lib/                 # Library code
+│   │   └── mongodb/         # MongoDB connection
+│   ├── models/              # Mongoose models
+│   ├── styles/              # CSS styles
+│   └── utils/               # Utility functions
+├── public/                  # Static assets
+└── ...config files
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Embedding in Qualtrics
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+To embed these tests in Qualtrics:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Use the Qualtrics JavaScript Editor to add an iframe pointing to this application
+2. Pass participant information via URL parameters
+3. Configure the application to send results back to Qualtrics
 
-## Learn More
+Example Qualtrics JavaScript:
+```javascript
+Qualtrics.SurveyEngine.addOnload(function() {
+  var container = document.querySelector('.QuestionBody');
+  var iframe = document.createElement('iframe');
+  iframe.src = 'https://your-app-url.com/tests/stroop?participantId=${e://Field/participantId}';
+  iframe.style.width = '100%';
+  iframe.style.height = '600px';
+  iframe.style.border = 'none';
+  container.appendChild(iframe);
+});
+```
 
-To learn more about Next.js, take a look at the following resources:
+## License
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Acknowledgments
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- JsPsych library for psychological test implementation
+- Next.js and React for the frontend framework
+- MongoDB for data storage
