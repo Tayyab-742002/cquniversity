@@ -37,19 +37,19 @@ const tests = [
     path: '/tests/corsi-blocks',
     status: 'active',
     icon: 'Boxes',
-    implemented: false
+    implemented: true
   },
   {
     id: 'fivePointsTest',
     name: 'Five-Points Test',
     description: 'A test of figural fluency and executive function.',
-    instructions: 'You will be presented with a grid of dots. Your task is to create as many unique designs as possible by connecting the dots with straight lines within a time limit.',
+    instructions: 'You will be presented with squares containing five dots each. Your task is to create as many unique designs as possible by connecting the dots with straight lines within a 3-minute time limit.',
     duration: '3-5 minutes',
     difficulty: 'Medium',
     path: '/tests/five-points',
     status: 'active',
     icon: 'LayoutGrid',
-    implemented: false
+    implemented: true
   }
 ];
 
@@ -121,9 +121,16 @@ export function getTestResultSchema(testId) {
     },
     corsiBlocksTest: {
       metrics: [
-        { name: 'span', label: 'Corsi Span', description: 'Maximum sequence length correctly recalled' },
-        { name: 'totalCorrect', label: 'Total Correct', description: 'Total number of correctly recalled sequences' },
-        { name: 'totalScore', label: 'Total Score', description: 'Weighted score based on sequence length and accuracy' }
+        { name: 'forward', label: 'Forward Span', description: 'Forward span performance', nested: true, children: [
+          { name: 'span', label: 'Max Span', description: 'Maximum sequence length correctly recalled in forward order' },
+          { name: 'totalCorrect', label: 'Correct Trials', description: 'Number of correctly recalled sequences' },
+          { name: 'accuracy', label: 'Accuracy', description: 'Percentage of correct responses', format: 'percentage' }
+        ]},
+        { name: 'backward', label: 'Backward Span', description: 'Backward span performance', nested: true, children: [
+          { name: 'span', label: 'Max Span', description: 'Maximum sequence length correctly recalled in reverse order' },
+          { name: 'totalCorrect', label: 'Correct Trials', description: 'Number of correctly recalled sequences' },
+          { name: 'accuracy', label: 'Accuracy', description: 'Percentage of correct responses', format: 'percentage' }
+        ]}
       ],
       visualization: 'barChart'
     },

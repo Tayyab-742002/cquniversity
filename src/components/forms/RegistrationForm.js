@@ -208,9 +208,9 @@ export default function RegistrationForm() {
           >
             <option value="">Select education level</option>
             <option value="high school">High School</option>
-            <option value="bachelor">Bachelor's Degree</option>
-            <option value="master">Master's Degree</option>
-            <option value="phd">PhD</option>
+            <option value="bachelor's degree">Bachelor's Degree</option>
+            <option value="master's degree">Master's Degree</option>
+            <option value="doctorate">PhD/Doctorate</option>
             <option value="other">Other</option>
           </select>
         </div>

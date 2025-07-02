@@ -143,14 +143,35 @@ function processStroopResults(results) {
  * @returns {Object} Processed metrics
  */
 function processTrailMakingResults(results) {
-  // Placeholder for Trail Making test processing
-  return {
-    timePartA: 0,
-    timePartB: 0,
-    errorsPartA: 0,
-    errorsPartB: 0,
-    bMinusA: 0
-  };
+  try {
+    console.log('Processing Trail Making results:', results);
+    
+    // The results should contain trialA, trialB, and bMinusA
+    if (!results || typeof results !== 'object') {
+      throw new Error('Invalid results format');
+    }
+
+    return {
+      trialA: {
+        time: results.trialA?.time || 0,
+        errors: results.trialA?.errors || 0
+      },
+      trialB: {
+        time: results.trialB?.time || 0,
+        errors: results.trialB?.errors || 0
+      },
+      bMinusA: results.bMinusA || 0,
+      completedAt: results.completedAt
+    };
+  } catch (error) {
+    console.error('Error processing Trail Making results:', error);
+    return {
+      trialA: { time: 0, errors: 0 },
+      trialB: { time: 0, errors: 0 },
+      bMinusA: 0,
+      error: 'Failed to process results'
+    };
+  }
 }
 
 /**
@@ -159,11 +180,97 @@ function processTrailMakingResults(results) {
  * @returns {Object} Processed metrics
  */
 function processCorsiBlocksResults(results) {
-  // Placeholder for Corsi Blocks test processing
+  try {
+    console.log('Processing Corsi Blocks results:', results);
+    
+    // Handle the new structure with forward and backward results
+    if (results.forward && results.backward) {
+      return {
+        forward: processCorsiSpanResults(results.forward, 'forward'),
+        backward: processCorsiSpanResults(results.backward, 'backward'),
+        completedAt: results.completedAt
+      };
+    }
+    
+    // Legacy support for old format
+    const data = typeof results === 'string' ? JSON.parse(results) : results;
+    const testTrials = Array.isArray(data) 
+      ? data.filter(trial => trial.task === 'corsi' && trial.condition === 'test' && trial.phase === 'response')
+      : [];
+      
+    return processCorsiSpanResults(testTrials, 'combined');
+  } catch (error) {
+    console.error('Error processing Corsi Blocks results:', error);
+    return {
+      forward: { span: 0, totalCorrect: 0, accuracy: 0 },
+      backward: { span: 0, totalCorrect: 0, accuracy: 0 },
+      error: 'Failed to process results'
+    };
+  }
+}
+
+/**
+ * Process Corsi span results for a specific version
+ * @param {Array} spanResults - Array of trial results
+ * @param {string} version - 'forward', 'backward', or 'combined'
+ * @returns {Object} Processed metrics
+ */
+function processCorsiSpanResults(spanResults, version) {
+  if (!Array.isArray(spanResults) || spanResults.length === 0) {
+    return {
+      span: 0,
+      totalCorrect: 0,
+      totalTrials: 0,
+      accuracy: 0,
+      spanLevels: {}
+    };
+  }
+
+  // Group trials by span level
+  const trialsBySpan = {};
+  spanResults.forEach(trial => {
+    const span = trial.span;
+    if (!trialsBySpan[span]) {
+      trialsBySpan[span] = [];
+    }
+    trialsBySpan[span].push(trial);
+  });
+
+  // Calculate metrics
+  const spanLevels = Object.keys(trialsBySpan).map(Number).sort((a, b) => a - b);
+  let maxSpan = 0;
+  let totalCorrect = 0;
+  let totalTrials = spanResults.length;
+  const spanLevelResults = {};
+
+  // Calculate performance at each span level
+  spanLevels.forEach(span => {
+    const spanTrials = trialsBySpan[span];
+    const correctTrials = spanTrials.filter(trial => trial.correct).length;
+    const spanAccuracy = (correctTrials / spanTrials.length) * 100;
+    
+    spanLevelResults[span] = {
+      trials: spanTrials.length,
+      correct: correctTrials,
+      accuracy: parseFloat(spanAccuracy.toFixed(2))
+    };
+    
+    totalCorrect += correctTrials;
+    
+    // Update max span if at least one trial at this span was correct
+    if (correctTrials > 0) {
+      maxSpan = span;
+    }
+  });
+
+  const overallAccuracy = totalTrials > 0 ? (totalCorrect / totalTrials) * 100 : 0;
+
   return {
-    span: 0,
-    totalCorrect: 0,
-    totalScore: 0
+    span: maxSpan,
+    totalCorrect,
+    totalTrials,
+    accuracy: parseFloat(overallAccuracy.toFixed(2)),
+    spanLevels: spanLevelResults
   };
 }
 

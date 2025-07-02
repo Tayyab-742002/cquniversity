@@ -3,40 +3,78 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
-import TestPlaceholder from '@/components/tests/TestPlaceholder';
-import { getTestById } from '@/utils/testConfig';
+import CorsiBlocksTest from '@/components/tests/CorsiBlocksTest';
+import axios from 'axios';
 
 export default function CorsiBlocksTestPage() {
   const router = useRouter();
   const [participantId, setParticipantId] = useState(null);
   const [loading, setLoading] = useState(true);
-  const testConfig = getTestById('corsiBlocksTest');
+  const [previousResult, setPreviousResult] = useState(null);
 
   useEffect(() => {
     // Check if user has registered (participantId should be in sessionStorage)
-    const id = sessionStorage.getItem('participantId');
+    const checkParticipant = async () => {
+      try {
+        const id = sessionStorage.getItem('participantId');
+        
+        if (!id) {
+          // If no participant ID found, redirect to registration
+          router.push('/');
+          return;
+        }
+        
+        setParticipantId(id);
+        
+        // Check if participant has already completed this test using the API
+        try {
+          const response = await axios.get(`/api/test-results/check?participantId=${id}&testId=corsiBlocksTest`);
+          if (response.data.result) {
+            setPreviousResult(response.data.result);
+          }
+        } catch (error) {
+          console.error('Error checking previous test results:', error);
+          // Continue without previous results
+        }
+        
+        setLoading(false);
+      } catch (error) {
+        console.error('Error accessing sessionStorage:', error);
+        // Continue without participant ID, will show error in the test component
+        setLoading(false);
+      }
+    };
     
-    if (!id) {
-      // If no participant ID found, redirect to registration
-      router.push('/');
-      return;
+    // Only run in browser environment
+    if (typeof window !== 'undefined') {
+      checkParticipant();
     }
-    
-    setParticipantId(id);
-    setLoading(false);
   }, [router]);
 
-  const handleStartTest = () => {
-    // This function will be replaced with actual JsPsych implementation later
-    alert('The Corsi Blocks Test will be implemented in the next phase.');
+  const handleRetake = () => {
+    setPreviousResult(null);
   };
 
   if (loading) {
     return (
       <MainLayout>
         <div className="flex items-center justify-center h-64">
+          <div className="animate-pulse flex flex-col items-center">
+            <div className="w-12 h-12 rounded-full bg-primary/20 mb-4"></div>
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (!participantId) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center min-h-screen bg-gray-50">
           <div className="text-center">
-            <p className="text-lg">Loading...</p>
+            <h1 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h1>
+            <p className="text-gray-600">Participant ID is required to access this test.</p>
           </div>
         </div>
       </MainLayout>
@@ -46,18 +84,18 @@ export default function CorsiBlocksTestPage() {
   return (
     <MainLayout>
       <div className="max-w-4xl mx-auto py-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-4">{testConfig.name}</h1>
-          <p className="text-lg text-gray-600">
-            {testConfig.description}
-          </p>
-        </div>
-
-        <TestPlaceholder 
-          testName={testConfig.name}
-          instructions={testConfig.instructions}
-          onStart={handleStartTest}
-        />
+        {previousResult ? (
+          <CorsiBlocksTest 
+            participantId={participantId}
+            showResults={true}
+            previousResult={previousResult}
+            onRetake={handleRetake}
+          />
+        ) : (
+          <CorsiBlocksTest 
+            participantId={participantId}
+          />
+        )}
       </div>
     </MainLayout>
   );
