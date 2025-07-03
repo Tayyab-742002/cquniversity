@@ -57,7 +57,7 @@ export default function TrailMakingTestPage() {
       // Update study progress
       await updateStudyProgress('trailMakingTest');
       
-      console.log('✅ Trail Making test results saved successfully');
+    
       router.push('/tests');
     } catch (error) {
       console.error('❌ Error saving test results:', error);

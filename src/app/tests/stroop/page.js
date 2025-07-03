@@ -28,7 +28,7 @@ export default function StroopTestPage() {
         
           // Check for previous test results
           const result = await checkPreviousTestResult(data.participant.id, 'stroopTest');
-          // console.log('Previous test result 🟣🟣🟣🟣🟣:', result);
+        
           if (result) {
             setPreviousResult(result);
             setShowResults(true);
@@ -58,7 +58,7 @@ export default function StroopTestPage() {
       // Update study progress
       await updateStudyProgress('stroopTest');
       
-      console.log('✅ Stroop test results saved successfully');
+     
       router.push('/tests');
     } catch (error) {
       console.error('❌ Error saving test results:', error);

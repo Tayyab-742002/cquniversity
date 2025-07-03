@@ -16,7 +16,6 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    console.log('📝 Registration attempt for user:', userId);
 
     // Extract participant data
     const { 
@@ -44,7 +43,7 @@ export async function POST(request) {
     const existingParticipant = await Participant.findOne({ clerkId: userId });
     
     if (existingParticipant) {
-      console.log('🚫 User already registered:', userId);
+
       return NextResponse.json({
         error: 'USER_ALREADY_REGISTERED',
         message: 'You have already registered for this study.',
@@ -60,7 +59,7 @@ export async function POST(request) {
     // Check for existing email (in case of account switching)
     const existingByEmail = await Participant.findOne({ email });
     if (existingByEmail) {
-      console.log('🚫 Email already registered:', { email });
+   
       return NextResponse.json({
         error: 'EMAIL_ALREADY_REGISTERED', 
         message: 'An account with this email already exists.'
@@ -86,11 +85,7 @@ export async function POST(request) {
 
     const savedParticipant = await participant.save();
 
-    console.log('✅ Participant registered successfully:', {
-      id: savedParticipant._id,
-      clerkId: userId,
-      email: savedParticipant.email
-    });
+
 
     return NextResponse.json({
       success: true,

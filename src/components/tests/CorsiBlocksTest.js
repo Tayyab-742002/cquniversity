@@ -20,8 +20,7 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
   const formatResults = (results) => {
     if (!results) return null;
     
-    console.log('formatResults input:', results);
-    
+
     // Handle both metrics and direct results structure
     let data = results;
     
@@ -251,7 +250,7 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
         
         currentTrialIndex++;
       },
-      display_element: 'jspsych-container',
+      display_element: 'jspsych-target',
       show_progress_bar: false,
       auto_update_progress_bar: false
     });
@@ -989,7 +988,7 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
       )}
 
       {status === 'running' && (
-        <div id="jspsych-container" className="w-full"></div>
+        <div id="jspsych-target" className="w-full"></div>
       )}
 
       {status === 'saving' && (

@@ -59,9 +59,6 @@ export async function POST(request) {
     // Save the updated participant
     await participant.save();
 
-    console.log(`✅ Synced study progress for participant ${participant._id}: ${completedCount}/${totalTests} tests completed`);
-    console.log('Completed tests:', completedTestIds);
-
     return NextResponse.json({
       success: true,
       message: 'Study progress synced successfully',

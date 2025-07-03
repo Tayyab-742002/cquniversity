@@ -57,7 +57,7 @@ export default function CorsiBlocksTestPage() {
       // Update study progress
       await updateStudyProgress('corsiBlocksTest');
       
-      console.log('✅ Corsi Blocks test results saved successfully');
+
       router.push('/tests');
     } catch (error) {
       console.error('❌ Error saving test results:', error);

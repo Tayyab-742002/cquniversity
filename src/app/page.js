@@ -24,7 +24,7 @@ export default function Home() {
         
         if (response.ok && data.registered) {
           // User is registered, redirect to tests
-          console.log('✅ User registered, redirecting to tests...');
+      
           router.push('/tests');
         }
       } catch (error) {

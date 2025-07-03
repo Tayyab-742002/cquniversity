@@ -17,7 +17,7 @@ export function setupJsPsych(options = {}) {
     display_element: 'jspsych-target',
     on_finish: () => {
       // Default on_finish callback
-      console.log('JsPsych experiment finished');
+      // console.log('JsPsych experiment finished');
     }
   };
 

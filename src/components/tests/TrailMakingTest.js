@@ -292,7 +292,7 @@ export default function TrailMakingTest({ participantId, showResults = false, pr
           if (distance <= node.radius) {
             // Wrong node clicked, count error
             errorsRef.current++;
-            console.log('Error recorded, total errors:', errorsRef.current);
+           
             break;
           }
         }
@@ -305,8 +305,7 @@ export default function TrailMakingTest({ participantId, showResults = false, pr
     const endTime = Date.now();
     const elapsedTime = (endTime - startTime) / 1000;
     
-    console.log(`${status} completed in ${elapsedTime} seconds with ${errorsRef.current} errors`);
-    
+
     // Save results for current phase
     const currentPhaseResults = {
       time: elapsedTime,
@@ -316,7 +315,7 @@ export default function TrailMakingTest({ participantId, showResults = false, pr
     // Store Trial A results in ref for reliable access later
     if (status === 'trial-a') {
       trialAResultsRef.current = currentPhaseResults;
-      console.log('Stored Trial A results in ref:', trialAResultsRef.current);
+      
     }
     
     // Map status to correct phase key
@@ -344,9 +343,7 @@ export default function TrailMakingTest({ participantId, showResults = false, pr
       [phaseKey]: currentPhaseResults
     };
     
-    console.log(`Saving ${phaseKey} results:`, currentPhaseResults);
-    console.log('Updated phase results:', updatedPhaseResults);
-    
+
     setPhaseResults(updatedPhaseResults);
     
     // Move to next phase
@@ -372,10 +369,7 @@ export default function TrailMakingTest({ participantId, showResults = false, pr
     try {
       setStatus('saving');
       
-      console.log('=== Saving Trail Making Test Results ===');
-      console.log('Trial A Results from ref:', trialAResults);
-      console.log('Trial B Results:', trialBResults);
-      
+
       // Ensure we have Trial A results
       if (!trialAResults) {
         console.error('Trial A results not found!');
@@ -389,20 +383,17 @@ export default function TrailMakingTest({ participantId, showResults = false, pr
         trialB: trialBResults
       };
       
-      console.log('Compiled Test Results:', testResults);
-      
+
       // Calculate B-A difference (trail B - trail A)
       const bMinusA = testResults.trialB.time - testResults.trialA.time;
-      console.log('B-A Calculation:', testResults.trialB.time, '-', testResults.trialA.time, '=', bMinusA);
-      
+
       const resultsWithMetrics = {
         ...testResults,
         bMinusA: parseFloat(bMinusA.toFixed(2)),
         completedAt: new Date().toISOString()
       };
       
-      console.log('Final Results to Send:', resultsWithMetrics);
-      
+
       if (onTestComplete) {
         // Use the parent's save function which handles progress updates
         await onTestComplete(resultsWithMetrics);
@@ -414,7 +405,7 @@ export default function TrailMakingTest({ participantId, showResults = false, pr
           results: resultsWithMetrics
         });
         
-        console.log('API Response:', response.data);
+
       }
       
       setResults(resultsWithMetrics);

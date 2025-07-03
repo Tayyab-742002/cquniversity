@@ -84,8 +84,7 @@ export default function RegistrationForm() {
     setError(null);
     
     try {
-      console.log('📝 Submitting registration for Clerk user:', userId);
-      
+
       const registrationData = {
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -106,8 +105,7 @@ export default function RegistrationForm() {
       const data = await response.json();
       
       if (response.ok && data.success) {
-        console.log('✅ Registration successful!');
-        
+
         // Store participant ID for easy access
         sessionStorage.setItem('participantId', data.participant.id);
         

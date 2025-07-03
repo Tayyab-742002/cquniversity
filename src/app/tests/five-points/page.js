@@ -57,7 +57,7 @@ export default function FivePointsTestPage() {
       // Update study progress
       await updateStudyProgress('fivePointsTest');
       
-      console.log('✅ Five Points test results saved successfully');
+  
       router.push('/tests');
     } catch (error) {
       console.error('❌ Error saving test results:', error);

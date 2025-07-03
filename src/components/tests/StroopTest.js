@@ -5,7 +5,7 @@ import LoadingSpinner from "../common/LoadingSpinner";
 import PreviousResultCard from "./PreviousResultCard";
 
 // Import JsPsych plugins dynamically to avoid SSR issues
-let setupJsPsych,  cleanupJsPsych;
+let setupJsPsych, createJsPsychContainer, cleanupJsPsych;
 let htmlKeyboardResponse, htmlButtonResponse, preload, instructions;
 
 export default function StroopTest({
@@ -25,8 +25,6 @@ export default function StroopTest({
   const [isClient, setIsClient] = useState(false);
   
 
-
-  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
 
   // Check if we're on the client side
   useEffect(() => {
@@ -133,7 +131,7 @@ export default function StroopTest({
       completedAt: new Date().toISOString(),
     };
 
-    // console.log('Final testResults structure:', testResults);
+
 
     try {
       setStatus("saving");
@@ -150,7 +148,7 @@ export default function StroopTest({
         });
       }
 
-      setResults(formatResults(testResults));
+     
       setStatus("results");
     } catch (error) {
       console.error("Error saving results:", error);
@@ -180,11 +178,14 @@ export default function StroopTest({
     let controlResults = [];
     let experimentalResults = [];
 
+    // Create the container first
+    createJsPsychContainer();
+    
     const jsPsych = setupJsPsych({
       on_finish: async () => {
         await saveResults(jsPsych.data.get().values());
       },
-      display_element: "jspsych-container",
+      display_element: "jspsych-target",
       on_trial_finish: (data) => {
         currentTrialIndex++;
 
@@ -573,11 +574,6 @@ export default function StroopTest({
           trial_number: index + 1,
         },
         on_finish: function (data) {
-          // console.log('RAW trial data:', data);
-          // console.log('Trial direction:', trial.direction);
-          // console.log('User response:', data.response);
-          // console.log('Response type:', typeof data.response);
-          // console.log('RT:', data.rt);
 
           // Fix response mapping - jsPsych might return different values
           let correctKey;
@@ -628,13 +624,7 @@ export default function StroopTest({
           data.correct = isCorrect;
           data.reaction_time = data.rt || 0;
 
-          console.log("Processed control trial:", {
-            direction: trial.direction,
-            expectedKey: correctKey,
-            actualResponse: data.response,
-            isCorrect: isCorrect,
-            reactionTime: data.reaction_time,
-          });
+      
         },
       });
     });
@@ -680,11 +670,6 @@ export default function StroopTest({
           trial_number: index + 1,
         },
         on_finish: function (data) {
-          // console.log('RAW practice trial data:', data);
-          // console.log('Trial direction:', trial.direction);
-          // console.log('User response:', data.response);
-          // console.log('Response type:', typeof data.response);
-          // console.log('RT:', data.rt);
 
           // Fix response mapping - jsPsych might return different values
           let correctKey;
@@ -802,11 +787,7 @@ export default function StroopTest({
           trial_number: index + 1,
         },
         on_finish: function (data) {
-          // console.log('RAW trial data:', data);
-          // console.log('Trial direction:', trial.direction);
-          // console.log('User response:', data.response);
-          // console.log('Response type:', typeof data.response);
-          // console.log('RT:', data.rt);
+
 
           // Fix response mapping - jsPsych might return different values
           let correctKey;
@@ -857,13 +838,7 @@ export default function StroopTest({
           data.correct = isCorrect;
           data.reaction_time = data.rt || 0;
 
-          console.log("Processed control trial:", {
-            direction: trial.direction,
-            expectedKey: correctKey,
-            actualResponse: data.response,
-            isCorrect: isCorrect,
-            reactionTime: data.reaction_time,
-          });
+      
         },
       });
     });
@@ -953,11 +928,6 @@ export default function StroopTest({
           trial_number: index + 1,
         },
         on_finish: function (data) {
-          // console.log('RAW experimental trial data:', data);
-          // console.log('Trial direction:', trial.direction);
-          // console.log('User response:', data.response);
-          // console.log('Response type:', typeof data.response);
-          // console.log('RT:', data.rt);
 
           // Fix response mapping - jsPsych might return different values
           let correctKey;
@@ -1008,15 +978,7 @@ export default function StroopTest({
           data.correct = isCorrect;
           data.reaction_time = data.rt || 0;
 
-          // console.log('Processed experimental trial:', {
-          //   direction: trial.direction,
-          //   position: trial.position,
-          //   congruent: trial.congruent,
-          //   expectedKey: correctKey,
-          //   actualResponse: data.response,
-          //   isCorrect: isCorrect,
-          //   reactionTime: data.reaction_time
-          // });
+        
         },
       });
     });
@@ -1048,25 +1010,10 @@ export default function StroopTest({
         }}
         formatResults={()=>{
           return {
-            control: {
-              accuracy: previousResult.metrics.control.accuracy,
-              avgRT: previousResult.metrics.control.avgRT,
-              totalTrials: previousResult.metrics.control.totalTrials,
-              correctTrials: previousResult.metrics.control.correctTrials,
-            },
-            experimental: {
-              accuracy: previousResult.metrics.experimental.accuracy,
-              avgRT: previousResult.metrics.experimental.avgRT,
-              totalTrials: previousResult.metrics.experimental.totalTrials,
-              correctTrials: previousResult.metrics.experimental.correctTrials,
-            },
-            stroopEffect: previousResult.metrics.stroopEffect,
             totalTrials: previousResult.metrics.totalTrials,
-            correctTrials: previousResult.metrics.correctTrials,
             accuracy: previousResult.metrics.accuracy,
             averageRT: previousResult.metrics.averageRT,
-            congruentRT: previousResult.metrics.congruentRT,
-            incongruentRT: previousResult.metrics.incongruentRT,
+            stroopEffect: previousResult.metrics.stroopEffect,
           }
         }}
       />
@@ -1208,7 +1155,7 @@ export default function StroopTest({
       )}
 
       {status === "running" && (
-        <div id="jspsych-container" className="w-full"></div>
+        <div id="jspsych-target" className="w-full"></div>
       )}
 
       {status === "saving" && (
