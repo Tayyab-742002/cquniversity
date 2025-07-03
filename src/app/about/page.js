@@ -2,7 +2,7 @@ import MainLayout from '@/components/layout/MainLayout';
 
 export default function AboutPage() {
   return (
-    <MainLayout>
+   
       <div className="max-w-4xl mx-auto py-12">
         <div className="text-center mb-12">
           <div className="inline-block p-3 rounded-full bg-accent/10 mb-4">
@@ -136,6 +136,6 @@ export default function AboutPage() {
           </div>
         </div>
       </div>
-    </MainLayout>
+    
   );
 } 
