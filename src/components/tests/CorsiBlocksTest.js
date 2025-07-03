@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import LoadingSpinner from '../common/LoadingSpinner';
 
 // Import JsPsych plugins dynamically to avoid SSR issues
 let setupJsPsych, createJsPsychContainer, cleanupJsPsych;
@@ -91,15 +92,13 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
   // Save results to database
   const saveResults = async (testResults) => {
     try {
-      console.log('Saving Corsi Blocks test results:', JSON.stringify(testResults, null, 2));
+      setStatus('saving');
       
       const response = await axios.post('/api/test-results', {
         participantId,
         testId: 'corsiBlocksTest',
         results: testResults
       });
-      
-      console.log('Test results saved successfully:', response.data);
       
       setResults(formatResults(testResults));
       setStatus('results');
@@ -124,28 +123,43 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
     
           let currentTrialIndex = 0;
       let forwardResults = [];
+      let backwardResults = [];
 
     const jsPsych = setupJsPsych({
       on_finish: async () => {
-        // Calculate results
-        const totalTrials = forwardResults.length;
-        const correctTrials = forwardResults.filter(trial => trial.correct).length;
-        const accuracy = totalTrials > 0 ? Math.round((correctTrials / totalTrials) * 100) : 0;
+        // Calculate results for both forward and backward
+        const totalTrials = forwardResults.length + backwardResults.length;
+        const totalCorrect = forwardResults.filter(trial => trial.correct).length + 
+                           backwardResults.filter(trial => trial.correct).length;
+        const accuracy = totalTrials > 0 ? Math.round((totalCorrect / totalTrials) * 100) : 0;
         
-        // Calculate highest span achieved
-        let maxSpan = 0;
+        // Calculate highest span achieved for forward
+        let forwardSpan = 0;
         forwardResults.forEach(trial => {
           if (trial.correct) {
-            maxSpan = Math.max(maxSpan, trial.span);
+            forwardSpan = Math.max(forwardSpan, trial.span);
+          }
+        });
+
+        // Calculate highest span achieved for backward
+        let backwardSpan = 0;
+        backwardResults.forEach(trial => {
+          if (trial.correct) {
+            backwardSpan = Math.max(backwardSpan, trial.span);
           }
         });
 
         const combinedResults = {
-          trials: forwardResults,
+          forwardTrials: forwardResults,
+          backwardTrials: backwardResults,
           metrics: {
-            span: maxSpan,
+            forwardSpan: forwardSpan,
+            backwardSpan: backwardSpan,
+            totalSpan: forwardSpan + backwardSpan,
             accuracy: accuracy,
-            totalTrials: totalTrials
+            totalTrials: totalTrials,
+            forwardAccuracy: forwardResults.length > 0 ? Math.round((forwardResults.filter(trial => trial.correct).length / forwardResults.length) * 100) : 0,
+            backwardAccuracy: backwardResults.length > 0 ? Math.round((backwardResults.filter(trial => trial.correct).length / backwardResults.length) * 100) : 0
           },
           completedAt: new Date().toISOString(),
           testParameters: {
@@ -160,7 +174,11 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
       },
       on_trial_finish: (data) => {
         if (data.task === 'corsi' && data.phase === 'response' && data.condition === 'test') {
-          forwardResults.push(data);
+          if (data.version === 'forward') {
+            forwardResults.push(data);
+          } else if (data.version === 'backward') {
+            backwardResults.push(data);
+          }
         }
         
         currentTrialIndex++;
@@ -182,10 +200,10 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
         position: relative;
         width: 800px;
         height: 600px;
-        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 50%, var(--accent) 100%);
+        background-color: var(--card);
         margin: 20px auto;
         border-radius: var(--radius-xl);
-        border: 4px solid var(--card);
+        border: 4px solid var(--border);
         box-shadow: var(--shadow-2xl);
         overflow: hidden;
       }
@@ -194,9 +212,9 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
         position: absolute;
         width: 80px;
         height: 60px;
-        background: linear-gradient(145deg, var(--chart-3), var(--chart-5));
+        background: var(--chart-3);
         border: 3px solid var(--border);
-        border-radius: calc(var(--radius) * 6);
+        border-radius: calc(var(--radius) * 2);
         display: flex;
         justify-content: center;
         align-items: center;
@@ -217,7 +235,7 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
       }
       
       .corsi-block.active {
-        background: linear-gradient(145deg, var(--primary), var(--chart-1));
+        background:var(--chart-5);
         border-color: var(--ring);
         color: var(--primary-foreground);
         transform: scale(1.2);
@@ -226,7 +244,7 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
       }
       
       .corsi-block.clicked {
-        background: linear-gradient(145deg, var(--chart-2), var(--secondary));
+        background: var(--chart-5);
         border-color: var(--secondary);
         color: var(--secondary-foreground);
         transform: scale(1.1);
@@ -703,33 +721,53 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
       };
     };
 
-    // Generate 7 trials with increasing span (2-8)
-    // Trial 1: span 2, Trial 2: span 3, ..., Trial 7: span 8
-    const trials = [];
+    // Generate forward trials (7 trials with increasing span 2-8)
+    const forwardTrials = [];
     for (let trial = 1; trial <= numTrials; trial++) {
       const span = startingSpan + (trial - 1); // span 2 for trial 1, span 3 for trial 2, etc.
-      trials.push(createCorsiTrial(span, trial, 'forward'));
+      forwardTrials.push(createCorsiTrial(span, trial, 'forward'));
     }
     
+    // Add transition screen between forward and backward
     timeline.push({
-      timeline: trials
+      timeline: forwardTrials
     });
 
-    // Completion screen
+    // Transition screen
     timeline.push({
       type: htmlButtonResponse,
       stimulus: `
         <div class="corsi-header">
-          <div class="corsi-title">Test Complete</div>
-          <div class="corsi-subtitle">Thank you for your participation</div>
+          <div class="corsi-title">Forward Span Complete!</div>
+          <div class="corsi-subtitle">Now we'll test your backward span</div>
         </div>
         <div class="corsi-instructions">
-          <p style="margin: 0;">Your results are being saved...</p>
+          <p>Great job! You've completed the forward span test.</p>
+          <p>Next, you'll see the same sequences, but you'll need to click the blocks in <strong>reverse order</strong> (last block first).</p>
+          <p>For example, if the sequence was 1-2-3, you would click 3-2-1.</p>
         </div>
       `,
-      choices: ['Finish'],
-      button_html: '<button class="btn-primary">%choice%</button>'
+      choices: ['Start Backward Span'],
+      button_html: '<button class="btn-accent">%choice%</button>',
+      data: {
+        task: 'corsi',
+        phase: 'transition',
+        condition: 'backward-start'
+      }
     });
+
+    // Generate backward trials (7 trials with increasing span 2-8)
+    const backwardTrials = [];
+    for (let trial = 1; trial <= numTrials; trial++) {
+      const span = startingSpan + (trial - 1); // span 2 for trial 1, span 3 for trial 2, etc.
+      backwardTrials.push(createCorsiTrial(span, trial, 'backward'));
+    }
+    
+    timeline.push({
+      timeline: backwardTrials
+    });
+
+
 
     setStatus('running');
     jsPsych.run(timeline);
@@ -747,8 +785,12 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
     console.log('Extracted data for formatting:', data);
     
     return {
-      span: data.span || 0,
+      forwardSpan: data.forwardSpan || 0,
+      backwardSpan: data.backwardSpan || 0,
+      totalSpan: data.totalSpan || 0,
       accuracy: data.accuracy || 0,
+      forwardAccuracy: data.forwardAccuracy || 0,
+      backwardAccuracy: data.backwardAccuracy || 0,
       totalTrials: data.totalTrials || 0,
       completedAt: results.completedAt || data.completedAt || new Date().toISOString()
     };
@@ -803,27 +845,43 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="text-center p-6 bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl border border-purple-200">
-              <div className="text-4xl font-bold text-purple-700 mb-1">{results?.span || 0}</div>
-              <div className="text-sm font-medium text-purple-600 uppercase tracking-wide">Max Span</div>
+              <div className="text-4xl font-bold text-purple-700 mb-1">{results?.forwardSpan || 0}</div>
+              <div className="text-sm font-medium text-purple-600 uppercase tracking-wide">Forward Span</div>
               <div className="text-xs text-purple-500 mt-1">Highest achieved</div>
+            </div>
+            
+            <div className="text-center p-6 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl border border-blue-200">
+              <div className="text-4xl font-bold text-blue-700 mb-1">{results?.backwardSpan || 0}</div>
+              <div className="text-sm font-medium text-blue-600 uppercase tracking-wide">Backward Span</div>
+              <div className="text-xs text-blue-500 mt-1">Highest achieved</div>
+            </div>
+            
+            <div className="text-center p-6 bg-gradient-to-r from-indigo-50 to-indigo-100 rounded-xl border border-indigo-200">
+              <div className="text-4xl font-bold text-indigo-700 mb-1">{results?.totalSpan || 0}</div>
+              <div className="text-sm font-medium text-indigo-600 uppercase tracking-wide">Total Span</div>
+              <div className="text-xs text-indigo-500 mt-1">Forward + Backward</div>
             </div>
             
             <div className="text-center p-6 bg-gradient-to-r from-green-50 to-green-100 rounded-xl border border-green-200">
               <div className="text-4xl font-bold text-green-700 mb-1">{results?.accuracy || 0}%</div>
-              <div className="text-sm font-medium text-green-600 uppercase tracking-wide">Accuracy</div>
-              <div className="text-xs text-green-500 mt-1">Overall performance</div>
+              <div className="text-sm font-medium text-green-600 uppercase tracking-wide">Overall Accuracy</div>
+              <div className="text-xs text-green-500 mt-1">All trials</div>
             </div>
             
-            <div className="text-center p-6 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl border border-blue-200">
-              <div className="text-4xl font-bold text-blue-700 mb-1">{results?.totalTrials || 0}</div>
-              <div className="text-sm font-medium text-blue-600 uppercase tracking-wide">Total Trials</div>
-              <div className="text-xs text-blue-500 mt-1">Trials completed</div>
+            <div className="text-center p-6 bg-gradient-to-r from-teal-50 to-teal-100 rounded-xl border border-teal-200">
+              <div className="text-4xl font-bold text-teal-700 mb-1">{results?.forwardAccuracy || 0}%</div>
+              <div className="text-sm font-medium text-teal-600 uppercase tracking-wide">Forward Accuracy</div>
+              <div className="text-xs text-teal-500 mt-1">Forward trials only</div>
+            </div>
+            
+            <div className="text-center p-6 bg-gradient-to-r from-cyan-50 to-cyan-100 rounded-xl border border-cyan-200">
+              <div className="text-4xl font-bold text-cyan-700 mb-1">{results?.backwardAccuracy || 0}%</div>
+              <div className="text-sm font-medium text-cyan-600 uppercase tracking-wide">Backward Accuracy</div>
+              <div className="text-xs text-cyan-500 mt-1">Backward trials only</div>
             </div>
           </div>
 
-          <div className="text-center text-gray-500 mb-8 text-sm">
-            Completed on {new Date(results?.completedAt || '').toLocaleString()}
-          </div>
+        
 
           <div className="flex gap-4 justify-center">
             {showResults && onRetake && (
@@ -834,14 +892,14 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
                   setResults(null);
                   setError('');
                 }}
-                className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+                className="bg-purple-600 cursor-pointer text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
               >
                 Retake Test
               </button>
             )}
             <button
               onClick={() => router.push('/tests')}
-              className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+              className="bg-gray-600 cursor-pointer text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
             >
               Back to Tests
             </button>
@@ -863,9 +921,19 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
           <div className="grid md:grid-cols-2 gap-8">
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
-                  <svg className="w-6 h-6 text-purple-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <h2 className="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <svg
+                    className="w-6 h-6 text-pink-600 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                   Instructions
                 </h2>
@@ -875,11 +943,11 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
                     Some blocks will light up <strong>blue</strong> in a sequence, one after another.
                   </p>
                   <p>
-                    Your task is to remember the order and click on the blocks to reproduce the sequence 
-                    in the <strong>same order</strong> they appeared.
+                    This test has <strong>two parts</strong>: First, you'll click blocks in the <strong>same order</strong> 
+                    they appeared (forward span). Then, you'll click blocks in <strong>reverse order</strong> (backward span).
                   </p>
                   <p>
-                    The test has <strong>7 trials</strong> with increasing difficulty, starting with 2 blocks 
+                    Each part has <strong>7 trials</strong> with increasing difficulty, starting with 2 blocks 
                     and ending with 8 blocks.
                   </p>
                 </div>
@@ -906,42 +974,29 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
               <h2 className="text-2xl font-semibold text-gray-800 mb-4">Test Structure</h2>
               
               <div className="mt-6 p-6 bg-purple-50 rounded-lg w-full max-w-sm">
-                <h3 className="font-semibold text-purple-800 mb-4 text-center">7 Trials:</h3>
-                <div className="space-y-2 text-sm text-purple-700">
-                  <div className="flex justify-between items-center py-1">
-                    <span>Trial 1:</span>
-                    <span className="font-semibold">2 blocks</span>
+                <h3 className="font-semibold text-pink-800 mb-4 text-center">Two Parts:</h3>
+                <div className="space-y-3 text-sm text-pink-700">
+                  <div className="p-3 bg-white rounded border border-pink-200">
+                    <div className="font-semibold text-pink-800">Forward Span</div>
+                    <div className="text-xs mt-1">Click in same order: 1-2-3</div>
                   </div>
-                  <div className="flex justify-between items-center py-1">
-                    <span>Trial 2:</span>
-                    <span className="font-semibold">3 blocks</span>
+                  <div className="p-3 bg-white rounded border border-pink-200">
+                    <div className="font-semibold text-pink-800">Backward Span</div>
+                    <div className="text-xs mt-1">Click in reverse order: 3-2-1</div>
                   </div>
-                  <div className="flex justify-between items-center py-1">
-                    <span>Trial 3:</span>
-                    <span className="font-semibold">4 blocks</span>
-                  </div>
-                  <div className="flex justify-between items-center py-1">
-                    <span>Trial 4:</span>
-                    <span className="font-semibold">5 blocks</span>
-                  </div>
-                  <div className="flex justify-between items-center py-1">
-                    <span>Trial 5:</span>
-                    <span className="font-semibold">6 blocks</span>
-                  </div>
-                  <div className="flex justify-between items-center py-1">
-                    <span>Trial 6:</span>
-                    <span className="font-semibold">7 blocks</span>
-                  </div>
-                  <div className="flex justify-between items-center py-1">
-                    <span>Trial 7:</span>
-                    <span className="font-semibold">8 blocks</span>
+                </div>
+                
+                <div className="mt-4 p-3 bg-white rounded border border-pink-200">
+                  <div className="text-center text-xs text-pink-700">
+                    <div className="font-semibold">Each part: 7 trials</div>
+                    <div>Span 2 → 8 blocks</div>
                   </div>
                 </div>
                 
                 <div className="mt-4 pt-4 border-t border-purple-200">
                   <div className="text-center text-sm text-purple-600">
                     <p className="font-semibold">Scoring:</p>
-                    <p>Highest span achieved + Overall accuracy</p>
+                    <p>Forward + Backward spans + Accuracy</p>
                   </div>
                 </div>
               </div>
@@ -951,7 +1006,7 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
           <div className="flex justify-center mt-8">
             <button
               onClick={() => setStatus('test')}
-              className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-10 py-4 rounded-lg text-lg font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="bg-accent cursor-pointer text-white px-10 py-4 rounded-lg text-lg font-semibold "
             >
               Start Test
             </button>
@@ -961,6 +1016,14 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
 
       {status === 'running' && (
         <div id="jspsych-container" className="w-full"></div>
+      )}
+
+      {status === 'saving' && (
+        <LoadingSpinner 
+          title="Saving Results"
+          message="Your test results are being saved..."
+          color="purple"
+        />
       )}
 
       {status === 'error' && (

@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import LoadingSpinner from '../common/LoadingSpinner';
 
 export default function TrailMakingTest({ participantId, showResults = false, previousResult = null, onRetake = null }) {
   const router = useRouter();
@@ -365,6 +366,8 @@ export default function TrailMakingTest({ participantId, showResults = false, pr
   // Save results to database
   const saveResults = async (trialBResults, trialAResults) => {
     try {
+      setStatus('saving');
+      
       console.log('=== Saving Trail Making Test Results ===');
       console.log('Trial A Results from ref:', trialAResults);
       console.log('Trial B Results:', trialBResults);
@@ -470,14 +473,19 @@ export default function TrailMakingTest({ participantId, showResults = false, pr
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <div className="bg-white rounded-xl shadow-xl p-8 max-w-2xl w-full">
-          <div className="text-center mb-8">
+        <div className="text-center mb-8">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <h2 className="text-3xl font-bold text-gray-800 mb-2">Test Complete!</h2>
-            <p className="text-gray-600">Digital Trail Making Test Results</p>
+            <p className="text-gray-600">Corsi Blocks Test Results</p>
+            {showResults && (
+              <p className="text-sm text-gray-500 mt-2">
+                Completed on {new Date(results?.completedAt || '').toLocaleDateString()} at {new Date(results?.completedAt || '').toLocaleTimeString()}
+              </p>
+            )}
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -519,9 +527,7 @@ export default function TrailMakingTest({ participantId, showResults = false, pr
             <div className="text-xs text-indigo-500 mt-1">Executive function metric</div>
           </div>
 
-          <div className="text-center text-gray-500 mb-8 text-sm">
-            Completed on {new Date(results?.completedAt || '').toLocaleString()}
-          </div>
+        
 
           <div className="flex gap-4 justify-center">
             {showResults && onRetake && (
@@ -532,14 +538,14 @@ export default function TrailMakingTest({ participantId, showResults = false, pr
                   setResults(null);
                   setError('');
                 }}
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                className="bg-purple-600 cursor-pointer text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
               >
                 Retake Test
               </button>
             )}
             <button
               onClick={() => router.push('/tests')}
-              className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+              className="bg-gray-600 cursor-pointer text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
             >
               Back to Tests
             </button>
@@ -561,9 +567,19 @@ export default function TrailMakingTest({ participantId, showResults = false, pr
           <div className="grid md:grid-cols-2 gap-8">
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
-                  <svg className="w-6 h-6 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <h2 className="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <svg
+                    className="w-6 h-6 text-pink-600 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                   Instructions
                 </h2>
@@ -603,29 +619,29 @@ export default function TrailMakingTest({ participantId, showResults = false, pr
               <h2 className="text-2xl font-semibold text-gray-800 mb-4">Test Structure</h2>
               
               <div className="mt-6 p-6 bg-blue-50 rounded-lg w-full max-w-sm">
-                <h3 className="font-semibold text-blue-800 mb-4 text-center">Four Phases:</h3>
-                <div className="space-y-3 text-sm text-blue-700">
-                  <div className="p-3 bg-white rounded border border-blue-200">
-                    <div className="font-semibold text-blue-800">Sample A</div>
+                <h3 className="font-semibold text-pink-800 mb-4 text-center">Four Phases:</h3>
+                <div className="space-y-3 text-sm text-pink-700">
+                  <div className="p-3 bg-white rounded border border-pink-200">
+                    <div className="font-semibold text-pink-800">Sample A</div>
                     <div className="text-xs mt-1">Practice: Numbers 1-8</div>
                   </div>
-                  <div className="p-3 bg-white rounded border border-blue-200">
-                    <div className="font-semibold text-blue-800">Trial A</div>
+                  <div className="p-3 bg-white rounded border border-pink-200">
+                    <div className="font-semibold text-pink-800">Trial A</div>
                     <div className="text-xs mt-1">Main test: Numbers 1-25</div>
                   </div>
-                  <div className="p-3 bg-white rounded border border-blue-200">
-                    <div className="font-semibold text-blue-800">Sample B</div>
+                  <div className="p-3 bg-white rounded border border-pink-200">
+                    <div className="font-semibold text-pink-800">Sample B</div>
                     <div className="text-xs mt-1">Practice: 1-A-2-B-3</div>
                   </div>
-                  <div className="p-3 bg-white rounded border border-blue-200">
-                    <div className="font-semibold text-blue-800">Trial B</div>
+                  <div className="p-3 bg-white rounded border border-pink-200">
+                    <div className="font-semibold text-pink-800">Trial B</div>
                     <div className="text-xs mt-1">Main test: 1-A-2-B...13</div>
                   </div>
                 </div>
                 
-                <div className="mt-4 pt-4 border-t border-blue-200">
-                  <div className="text-center text-sm text-blue-600">
-                    <p className="font-semibold">Key Metrics:</p>
+                <div className="mt-4 pt-4 border-t border-purple-200">
+                  <div className="text-center text-sm text-purple-600">
+                    <p className="font-semibold">Scoring:</p>
                     <p>Completion time + Error count</p>
                   </div>
                 </div>
@@ -636,7 +652,7 @@ export default function TrailMakingTest({ participantId, showResults = false, pr
           <div className="flex justify-center mt-8">
             <button
               onClick={() => setStatus('sample-a')}
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-10 py-4 rounded-lg text-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="bg-accent cursor-pointer text-white px-10 py-4 rounded-lg text-lg font-semibold"
             >
               Start Practice
             </button>
@@ -663,7 +679,7 @@ export default function TrailMakingTest({ participantId, showResults = false, pr
           </p>
           <button
             onClick={() => setStatus('trial-a')}
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
+            className="bg-accent cursor-pointer text-white px-8 py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
           >
             Start Trial A
           </button>
@@ -689,7 +705,7 @@ export default function TrailMakingTest({ participantId, showResults = false, pr
           </p>
           <button
             onClick={() => setStatus('sample-b')}
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
+            className="bg-accent cursor-pointer text-white px-8 py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
           >
             Start Sample B
           </button>
@@ -715,7 +731,7 @@ export default function TrailMakingTest({ participantId, showResults = false, pr
           </p>
           <button
             onClick={() => setStatus('trial-b')}
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
+            className="bg-accent cursor-pointer text-white px-8 py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
           >
             Start Trial B
           </button>
@@ -728,6 +744,16 @@ export default function TrailMakingTest({ participantId, showResults = false, pr
     return renderTest(
       'Trial B - Main Test',
       'Click in alternating order: 1, A, 2, B, 3, C... up to 13'
+    );
+  }
+
+  if (status === 'saving') {
+    return (
+      <LoadingSpinner 
+        title="Saving Results"
+        message="Your test results are being saved..."
+        color="purple"
+      />
     );
   }
 

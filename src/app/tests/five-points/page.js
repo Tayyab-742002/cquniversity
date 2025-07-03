@@ -68,6 +68,7 @@ export default function FivePointsTestPage() {
     );
   }
 
+
   if (!participantId) {
     return (
       <MainLayout>
