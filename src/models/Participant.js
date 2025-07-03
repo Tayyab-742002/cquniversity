@@ -26,68 +26,117 @@ const testResultSchema = new mongoose.Schema({
   strict: false
 });
 
-// Define schema for participant
+// Define schema for participant with Clerk integration
 const participantSchema = new mongoose.Schema({
-  name: {
+  // Clerk user ID (primary identifier)
+  clerkId: {
     type: String,
-    required: [true, 'Name is required'],
+    required: true,
+    unique: true,
+    index: true
+  },
+  
+  // User profile information
+  firstName: {
+    type: String,
+    required: [true, 'First name is required'],
     trim: true
+  },
+  lastName: {
+    type: String,
+    required: [true, 'Last name is required'],
+    trim: true
+  },
+  email: {
+    type: String,
+    required: [true, 'Email is required'],
+    unique: true,
+    trim: true,
+    lowercase: true,
+    match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email address'],
+    index: true
   },
   age: {
     type: Number,
     required: [true, 'Age is required'],
     min: [18, 'Age must be at least 18'],
-    max: [100, 'Age must be less than 100']
+    max: [120, 'Age must be less than 120']
   },
   gender: {
     type: String,
     required: [true, 'Gender is required'],
     enum: ['male', 'female', 'other', 'prefer-not-to-say']
   },
-  email: {
-    type: String,
-    required: [true, 'Email is required'],
-    trim: true,
-    lowercase: true,
-    match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email address']
-  },
-  educationLevel: {
+  education: {
     type: String,
     required: [true, 'Education level is required'],
     enum: ['high-school', 'bachelors', 'masters', 'doctorate', 'other']
   },
-  deviceId: {
-    type: String,
-    required: true,
-    unique: true
-  },
-  deviceFingerprint: {
-    type: mongoose.Schema.Types.Mixed,
-    required: false,
-    default: {}
-  },
-  fingerprintConfidence: {
-    type: Number,
-    required: false,
-    default: 0
-  },
-  ipAddress: {
+  
+  // Profile information from Google/Clerk
+  profileImageUrl: {
     type: String,
     required: false
   },
-  registeredAt: {
+  googleId: {
+    type: String,
+    required: false,
+    index: true
+  },
+  
+  // Timestamps
+  createdAt: {
     type: Date,
     default: Date.now
+  },
+  lastLoginAt: {
+    type: Date,
+    default: Date.now
+  },
+  
+  // Test tracking
+  testsCompleted: {
+    type: [String],
+    default: []
   },
   testResults: {
     type: [testResultSchema],
     default: []
+  },
+  
+  // Study participation status
+  studyStatus: {
+    type: String,
+    enum: ['registered', 'in-progress', 'completed', 'withdrawn'],
+    default: 'registered'
   }
 }, {
-  strict: false
+  strict: false,
+  timestamps: true
 });
 
-// Create or get model
-const Participant = mongoose.models.Participant || mongoose.model('Participant', participantSchema);
+// Indexes for performance
+participantSchema.index({ clerkId: 1 });
+participantSchema.index({ email: 1 }, { unique: true });
+participantSchema.index({ googleId: 1 });
+participantSchema.index({ createdAt: -1 });
+participantSchema.index({ studyStatus: 1 });
+
+// Virtual for full name
+participantSchema.virtual('fullName').get(function() {
+  return `${this.firstName} ${this.lastName}`;
+});
+
+// Ensure virtual fields are serialized
+participantSchema.set('toJSON', { virtuals: true });
+participantSchema.set('toObject', { virtuals: true });
+
+// Clear any existing model to prevent conflicts
+if (mongoose.models.Participant) {
+  delete mongoose.models.Participant;
+}
+
+// Create the model
+const Participant = mongoose.model('Participant', participantSchema);
 
 export default Participant; 

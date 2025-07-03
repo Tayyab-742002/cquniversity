@@ -8,10 +8,11 @@ import Participant from '@/models/Participant';
  * @returns {Promise<NextResponse>} Response with test result or null
  */
 export async function GET(request) {
+
   const { searchParams } = new URL(request.url);
   const participantId = searchParams.get('participantId');
   const testId = searchParams.get('testId');
-  
+
   if (!participantId || !testId) {
     return NextResponse.json(
       { error: 'Participant ID and test ID are required' },
@@ -36,7 +37,7 @@ export async function GET(request) {
     const testResult = participant.testResults.find(
       result => result.testId === testId
     );
-    
+ 
     return NextResponse.json({ result: testResult || null });
   } catch (error) {
     console.error('Error checking test result:', error);

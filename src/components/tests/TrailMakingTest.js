@@ -1,9 +1,10 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import LoadingSpinner from '../common/LoadingSpinner';
+import PreviousResultCard from './PreviousResultCard';
 
-export default function TrailMakingTest({ participantId, showResults = false, previousResult = null, onRetake = null }) {
+export default function TrailMakingTest({ participantId, showResults = false, previousResult = null, onRetake = null, onTestComplete = null }) {
   const router = useRouter();
   const [status, setStatus] = useState(showResults ? 'results' : 'sample-a-instructions');
   const [error, setError] = useState(null);
@@ -291,7 +292,7 @@ export default function TrailMakingTest({ participantId, showResults = false, pr
           if (distance <= node.radius) {
             // Wrong node clicked, count error
             errorsRef.current++;
-            console.log('Error recorded, total errors:', errorsRef.current);
+           
             break;
           }
         }
@@ -304,8 +305,7 @@ export default function TrailMakingTest({ participantId, showResults = false, pr
     const endTime = Date.now();
     const elapsedTime = (endTime - startTime) / 1000;
     
-    console.log(`${status} completed in ${elapsedTime} seconds with ${errorsRef.current} errors`);
-    
+
     // Save results for current phase
     const currentPhaseResults = {
       time: elapsedTime,
@@ -315,7 +315,7 @@ export default function TrailMakingTest({ participantId, showResults = false, pr
     // Store Trial A results in ref for reliable access later
     if (status === 'trial-a') {
       trialAResultsRef.current = currentPhaseResults;
-      console.log('Stored Trial A results in ref:', trialAResultsRef.current);
+      
     }
     
     // Map status to correct phase key
@@ -343,9 +343,7 @@ export default function TrailMakingTest({ participantId, showResults = false, pr
       [phaseKey]: currentPhaseResults
     };
     
-    console.log(`Saving ${phaseKey} results:`, currentPhaseResults);
-    console.log('Updated phase results:', updatedPhaseResults);
-    
+
     setPhaseResults(updatedPhaseResults);
     
     // Move to next phase
@@ -371,10 +369,7 @@ export default function TrailMakingTest({ participantId, showResults = false, pr
     try {
       setStatus('saving');
       
-      console.log('=== Saving Trail Making Test Results ===');
-      console.log('Trial A Results from ref:', trialAResults);
-      console.log('Trial B Results:', trialBResults);
-      
+
       // Ensure we have Trial A results
       if (!trialAResults) {
         console.error('Trial A results not found!');
@@ -388,27 +383,30 @@ export default function TrailMakingTest({ participantId, showResults = false, pr
         trialB: trialBResults
       };
       
-      console.log('Compiled Test Results:', testResults);
-      
+
       // Calculate B-A difference (trail B - trail A)
       const bMinusA = testResults.trialB.time - testResults.trialA.time;
-      console.log('B-A Calculation:', testResults.trialB.time, '-', testResults.trialA.time, '=', bMinusA);
-      
+
       const resultsWithMetrics = {
         ...testResults,
         bMinusA: parseFloat(bMinusA.toFixed(2)),
         completedAt: new Date().toISOString()
       };
       
-      console.log('Final Results to Send:', resultsWithMetrics);
-      
-      const response = await axios.post('/api/test-results', {
-        participantId,
-        testId: 'trailMakingTest',
-        results: resultsWithMetrics
-      });
-      
-      console.log('API Response:', response.data);
+
+      if (onTestComplete) {
+        // Use the parent's save function which handles progress updates
+        await onTestComplete(resultsWithMetrics);
+      } else {
+        // Fallback to direct API call
+        const response = await axios.post('/api/test-results', {
+          participantId,
+          testId: 'trailMakingTest',
+          results: resultsWithMetrics
+        });
+        
+
+      }
       
       setResults(resultsWithMetrics);
       setStatus('results');
@@ -474,87 +472,18 @@ export default function TrailMakingTest({ participantId, showResults = false, pr
 
   if (status === 'results' && results) {
     return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <div className="bg-white rounded-xl shadow-xl p-8 max-w-2xl w-full">
-        <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <h2 className="text-3xl font-bold text-gray-800 mb-2">Test Complete!</h2>
-            <p className="text-gray-600">Corsi Blocks Test Results</p>
-            {showResults && (
-              <p className="text-sm text-gray-500 mt-2">
-                Completed on {new Date(results?.completedAt || '').toLocaleDateString()} at {new Date(results?.completedAt || '').toLocaleTimeString()}
-              </p>
-            )}
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div className="text-center p-6 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl border border-blue-200">
-              <div className="text-4xl font-bold text-blue-700 mb-1">
-                {(results?.trialA?.time !== null && results?.trialA?.time !== undefined) ? results.trialA.time.toFixed(2) : '0.00'}s
-              </div>
-              <div className="text-sm font-medium text-blue-600 uppercase tracking-wide">Trial A Time</div>
-              <div className="text-xs text-blue-500 mt-1">Numbers sequence</div>
-            </div>
-            <div className="text-center p-6 bg-gradient-to-r from-green-50 to-green-100 rounded-xl border border-green-200">
-              <div className="text-4xl font-bold text-green-700 mb-1">
-                {(results?.trialB?.time !== null && results?.trialB?.time !== undefined) ? results.trialB.time.toFixed(2) : '0.00'}s
-              </div>
-              <div className="text-sm font-medium text-green-600 uppercase tracking-wide">Trial B Time</div>
-              <div className="text-xs text-green-500 mt-1">Numbers & letters</div>
-            </div>
-            <div className="text-center p-6 bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-xl border border-yellow-200">
-              <div className="text-4xl font-bold text-yellow-700 mb-1">
-                {(results?.trialA?.errors !== null && results?.trialA?.errors !== undefined) ? results.trialA.errors : 0}
-              </div>
-              <div className="text-sm font-medium text-yellow-600 uppercase tracking-wide">Trial A Errors</div>
-              <div className="text-xs text-yellow-500 mt-1">Wrong connections</div>
-            </div>
-            <div className="text-center p-6 bg-gradient-to-r from-red-50 to-red-100 rounded-xl border border-red-200">
-              <div className="text-4xl font-bold text-red-700 mb-1">
-                {(results?.trialB?.errors !== null && results?.trialB?.errors !== undefined) ? results.trialB.errors : 0}
-              </div>
-              <div className="text-sm font-medium text-red-600 uppercase tracking-wide">Trial B Errors</div>
-              <div className="text-xs text-red-500 mt-1">Wrong connections</div>
-            </div>
-          </div>
-
-          <div className="text-center p-6 bg-gradient-to-r from-indigo-50 to-indigo-100 rounded-xl border border-indigo-200 mb-8">
-            <div className="text-3xl font-bold text-indigo-700 mb-1">
-              {(results?.bMinusA !== null && results?.bMinusA !== undefined) ? results.bMinusA.toFixed(2) : '0.00'}s
-            </div>
-            <div className="text-sm font-medium text-indigo-600 uppercase tracking-wide">B - A Difference</div>
-            <div className="text-xs text-indigo-500 mt-1">Executive function metric</div>
-          </div>
-
-        
-
-          <div className="flex gap-4 justify-center">
-            {showResults && onRetake && (
-              <button
-                onClick={() => {
-                  onRetake();
-                  setStatus('sample-a-instructions');
-                  setResults(null);
-                  setError('');
-                }}
-                className="bg-purple-600 cursor-pointer text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
-              >
-                Retake Test
-              </button>
-            )}
-            <button
-              onClick={() => router.push('/tests')}
-              className="bg-gray-600 cursor-pointer text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
-            >
-              Back to Tests
-            </button>
-          </div>
-        </div>
-      </div>
+      <PreviousResultCard
+        testName="Digital Trail Making Test"
+        testId="trailMakingTest"
+        result={results}
+        onRetake={() => {
+          if (onRetake) onRetake();
+          setStatus('sample-a-instructions');
+          setResults(null);
+          setError('');
+        }}
+        formatResults={formatResults}
+      />
     );
   }
 

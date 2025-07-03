@@ -9,6 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@clerk/nextjs": "^6.23.2",
+    "@clerk/themes": "^2.2.53",
     "@fingerprintjs/fingerprintjs": "^4.6.2",
     "@jspsych/plugin-canvas-keyboard-response": "^2.1.0",
     "@jspsych/plugin-html-button-response": "^1.1.2",

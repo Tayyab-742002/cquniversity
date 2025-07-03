@@ -144,8 +144,7 @@ function processStroopResults(results) {
  */
 function processTrailMakingResults(results) {
   try {
-    console.log('Processing Trail Making results:', results);
-    
+
     // The results should contain trialA, trialB, and bMinusA
     if (!results || typeof results !== 'object') {
       throw new Error('Invalid results format');
@@ -181,8 +180,7 @@ function processTrailMakingResults(results) {
  */
 function processCorsiBlocksResults(results) {
   try {
-    console.log('Processing Corsi Blocks results:', results);
-    
+
     // Handle the new structure with forward and backward results
     if (results.forward && results.backward) {
       return {

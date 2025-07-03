@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import LoadingSpinner from "../common/LoadingSpinner";
+import PreviousResultCard from "./PreviousResultCard";
 
 // Import JsPsych plugins dynamically to avoid SSR issues
 let setupJsPsych, createJsPsychContainer, cleanupJsPsych;
@@ -12,6 +13,7 @@ export default function StroopTest({
   showResults = false,
   previousResult = null,
   onRetake = null,
+  onTestComplete = null,
 }) {
   const router = useRouter();
   const [status, setStatus] = useState(
@@ -21,122 +23,14 @@ export default function StroopTest({
   const [error, setError] = useState("");
   const [results, setResults] = useState(null);
   const [isClient, setIsClient] = useState(false);
-
-  // HELPER FUNCTIONS MUST BE DEFINED BEFORE HOOKS THAT USE THEM
-  const formatResults = (results) => {
-    console.log("formatResults input:", results);
-
-    if (!results) return null;
-
-    // Handle database structure vs direct test results
-    let testData = results;
-    if (results.rawData) {
-      // This is from database - use rawData
-      testData = results.rawData;
-    } else if (results.metrics) {
-      // This is processed data from database - use metrics directly
-      console.log("Using processed metrics from database:", results.metrics);
-      return {
-        totalTrials: results.metrics.totalTrials || 0,
-        correctTrials: results.metrics.correctTrials || 0,
-        accuracy: results.metrics.accuracy || 0,
-        averageRT: results.metrics.averageRT || 0,
-        congruentRT: results.metrics.congruentRT || 0,
-        incongruentRT: results.metrics.incongruentRT || 0,
-        stroopEffect: results.metrics.stroopEffect || 0,
-        completedAt: results.completedAt || new Date().toISOString(),
-      };
-    }
-
-    const calculateMetrics = (data, condition) => {
-      console.log(`Calculating metrics for ${condition}:`, data);
-      if (!data || data.length === 0)
-        return { accuracy: 0, avgRT: 0, totalTrials: 0, correctTrials: 0 };
-
-      const correctTrials = data.filter((t) => t.correct);
-      const accuracy = Math.round((correctTrials.length / data.length) * 100);
-      const avgRT =
-        correctTrials.length > 0
-          ? Math.round(
-              correctTrials.reduce((sum, t) => sum + t.reaction_time, 0) /
-                correctTrials.length
-            )
-          : 0;
-
-      return {
-        accuracy,
-        avgRT,
-        totalTrials: data.length,
-        correctTrials: correctTrials.length,
-      };
-    };
-
-    const controlMetrics = calculateMetrics(testData.control, "control");
-    const experimentalMetrics = calculateMetrics(
-      testData.experimental,
-      "experimental"
-    );
-
-    // Calculate stroop effect (difference in RT between incongruent and congruent trials)
-    const experimentalData = testData.experimental || [];
-    const congruentTrials = experimentalData.filter(
-      (t) => t.congruent && t.correct
-    );
-    const incongruentTrials = experimentalData.filter(
-      (t) => !t.congruent && t.correct
-    );
-
-    const congruentAvgRT =
-      congruentTrials.length > 0
-        ? congruentTrials.reduce((sum, t) => sum + t.reaction_time, 0) /
-          congruentTrials.length
-        : 0;
-    const incongruentAvgRT =
-      incongruentTrials.length > 0
-        ? incongruentTrials.reduce((sum, t) => sum + t.reaction_time, 0) /
-          incongruentTrials.length
-        : 0;
-
-    const stroopEffect = Math.round(incongruentAvgRT - congruentAvgRT);
-
-    const finalResults = {
-      control: controlMetrics,
-      experimental: experimentalMetrics,
-      stroopEffect,
-      completedAt: testData.completedAt || new Date().toISOString(),
-      // Legacy format for backward compatibility
-      totalTrials: controlMetrics.totalTrials + experimentalMetrics.totalTrials,
-      correctTrials:
-        controlMetrics.correctTrials + experimentalMetrics.correctTrials,
-      accuracy: Math.round(
-        ((controlMetrics.correctTrials + experimentalMetrics.correctTrials) /
-          (controlMetrics.totalTrials + experimentalMetrics.totalTrials)) *
-          100
-      ),
-      averageRT: Math.round(
-        (controlMetrics.avgRT + experimentalMetrics.avgRT) / 2
-      ),
-      congruentRT: Math.round(congruentAvgRT),
-      incongruentRT: Math.round(incongruentAvgRT),
-    };
-
-    console.log("Final formatted results:", finalResults);
-    return finalResults;
-  };
-
-  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   
+
+
   // Check if we're on the client side
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // Load previous results if available
-  useEffect(() => {
-    if (showResults && previousResult) {
-      setResults(formatResults(previousResult));
-    }
-  }, [showResults, previousResult]);
 
   useEffect(() => {
     if (!isClient || status === "results") return;
@@ -237,18 +131,24 @@ export default function StroopTest({
       completedAt: new Date().toISOString(),
     };
 
-    // console.log('Final testResults structure:', testResults);
+
 
     try {
       setStatus("saving");
 
-      const response = await axios.post("/api/test-results", {
-        participantId,
-        testId: "stroopTest",
-        results: testResults,
-      });
+      if (onTestComplete) {
+        // Use the parent's save function which handles progress updates
+        await onTestComplete(testResults);
+      } else {
+        // Fallback to direct API call
+        const response = await axios.post("/api/test-results", {
+          participantId,
+          testId: "stroopTest",
+          results: testResults,
+        });
+      }
 
-      setResults(formatResults(testResults));
+     
       setStatus("results");
     } catch (error) {
       console.error("Error saving results:", error);
@@ -278,11 +178,14 @@ export default function StroopTest({
     let controlResults = [];
     let experimentalResults = [];
 
+    // Create the container first
+    createJsPsychContainer();
+    
     const jsPsych = setupJsPsych({
       on_finish: async () => {
         await saveResults(jsPsych.data.get().values());
       },
-      display_element: "jspsych-container",
+      display_element: "jspsych-target",
       on_trial_finish: (data) => {
         currentTrialIndex++;
 
@@ -671,11 +574,6 @@ export default function StroopTest({
           trial_number: index + 1,
         },
         on_finish: function (data) {
-          // console.log('RAW trial data:', data);
-          // console.log('Trial direction:', trial.direction);
-          // console.log('User response:', data.response);
-          // console.log('Response type:', typeof data.response);
-          // console.log('RT:', data.rt);
 
           // Fix response mapping - jsPsych might return different values
           let correctKey;
@@ -726,13 +624,7 @@ export default function StroopTest({
           data.correct = isCorrect;
           data.reaction_time = data.rt || 0;
 
-          console.log("Processed control trial:", {
-            direction: trial.direction,
-            expectedKey: correctKey,
-            actualResponse: data.response,
-            isCorrect: isCorrect,
-            reactionTime: data.reaction_time,
-          });
+      
         },
       });
     });
@@ -778,11 +670,6 @@ export default function StroopTest({
           trial_number: index + 1,
         },
         on_finish: function (data) {
-          // console.log('RAW practice trial data:', data);
-          // console.log('Trial direction:', trial.direction);
-          // console.log('User response:', data.response);
-          // console.log('Response type:', typeof data.response);
-          // console.log('RT:', data.rt);
 
           // Fix response mapping - jsPsych might return different values
           let correctKey;
@@ -900,11 +787,7 @@ export default function StroopTest({
           trial_number: index + 1,
         },
         on_finish: function (data) {
-          // console.log('RAW trial data:', data);
-          // console.log('Trial direction:', trial.direction);
-          // console.log('User response:', data.response);
-          // console.log('Response type:', typeof data.response);
-          // console.log('RT:', data.rt);
+
 
           // Fix response mapping - jsPsych might return different values
           let correctKey;
@@ -955,13 +838,7 @@ export default function StroopTest({
           data.correct = isCorrect;
           data.reaction_time = data.rt || 0;
 
-          console.log("Processed control trial:", {
-            direction: trial.direction,
-            expectedKey: correctKey,
-            actualResponse: data.response,
-            isCorrect: isCorrect,
-            reactionTime: data.reaction_time,
-          });
+      
         },
       });
     });
@@ -1051,11 +928,6 @@ export default function StroopTest({
           trial_number: index + 1,
         },
         on_finish: function (data) {
-          // console.log('RAW experimental trial data:', data);
-          // console.log('Trial direction:', trial.direction);
-          // console.log('User response:', data.response);
-          // console.log('Response type:', typeof data.response);
-          // console.log('RT:', data.rt);
 
           // Fix response mapping - jsPsych might return different values
           let correctKey;
@@ -1106,15 +978,7 @@ export default function StroopTest({
           data.correct = isCorrect;
           data.reaction_time = data.rt || 0;
 
-          // console.log('Processed experimental trial:', {
-          //   direction: trial.direction,
-          //   position: trial.position,
-          //   congruent: trial.congruent,
-          //   expectedKey: correctKey,
-          //   actualResponse: data.response,
-          //   isCorrect: isCorrect,
-          //   reactionTime: data.reaction_time
-          // });
+        
         },
       });
     });
@@ -1132,144 +996,27 @@ export default function StroopTest({
     setStatus("test");
   };
 
-  if (status === "results" && results) {
+  if (status === "results" && (results || showResults)) {
   return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <div className="bg-white rounded-xl shadow-xl p-8 max-w-2xl w-full">
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg
-                className="w-8 h-8 text-green-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-          </div>
-            <h2 className="text-3xl font-bold text-gray-800 mb-2">
-              Test Complete!
-            </h2>
-            <p className="text-gray-600">Visual Stroop Test Results</p>
-            {showResults && (
-              <p className="text-sm text-gray-500 mt-2">
-                Completed on{" "}
-                {new Date(results?.completedAt || "").toLocaleDateString()} at{" "}
-                {new Date(results?.completedAt || "").toLocaleTimeString()}
-              </p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="text-center p-6 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl border border-blue-200">
-              <div className="text-4xl font-bold text-blue-700 mb-1">
-                {results?.totalTrials || 0}
-          </div>
-              <div className="text-sm font-medium text-blue-600 uppercase tracking-wide">
-                Total Trials
-        </div>
-              <div className="text-xs text-blue-500 mt-1">Trials completed</div>
-            </div>
-
-            <div className="text-center p-6 bg-gradient-to-r from-green-50 to-green-100 rounded-xl border border-green-200">
-              <div className="text-4xl font-bold text-green-700 mb-1">
-                {results?.correctTrials || 0}
-              </div>
-              <div className="text-sm font-medium text-green-600 uppercase tracking-wide">
-                Correct Trials
-              </div>
-              <div className="text-xs text-green-500 mt-1">
-                Accurate responses
-              </div>
-            </div>
-
-            <div className="text-center p-6 bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl border border-purple-200">
-              <div className="text-4xl font-bold text-purple-700 mb-1">
-                {results?.accuracy || 0}%
-              </div>
-              <div className="text-sm font-medium text-purple-600 uppercase tracking-wide">
-                Accuracy
-              </div>
-              <div className="text-xs text-purple-500 mt-1">
-                Overall accuracy
-              </div>
-            </div>
-
-            <div className="text-center p-6 bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-xl border border-yellow-200">
-              <div className="text-4xl font-bold text-yellow-700 mb-1">
-                {results?.averageRT || 0}
-              </div>
-              <div className="text-sm font-medium text-yellow-600 uppercase tracking-wide">
-                Avg RT (ms)
-              </div>
-              <div className="text-xs text-yellow-500 mt-1">
-                Average response time
-              </div>
-            </div>
-
-            <div className="text-center p-6 bg-gradient-to-r from-teal-50 to-teal-100 rounded-xl border border-teal-200">
-              <div className="text-4xl font-bold text-teal-700 mb-1">
-                {results?.congruentRT || 0}
-              </div>
-              <div className="text-sm font-medium text-teal-600 uppercase tracking-wide">
-                Congruent RT
-              </div>
-              <div className="text-xs text-teal-500 mt-1">Matching trials</div>
-            </div>
-
-            <div className="text-center p-6 bg-gradient-to-r from-red-50 to-red-100 rounded-xl border border-red-200">
-              <div className="text-4xl font-bold text-red-700 mb-1">
-                {results?.incongruentRT || 0}
-              </div>
-              <div className="text-sm font-medium text-red-600 uppercase tracking-wide">
-                Incongruent RT
-              </div>
-              <div className="text-xs text-red-500 mt-1">
-                Conflicting trials
-              </div>
-            </div>
-          </div>
-
-          <div className="text-center p-6 bg-gradient-to-r from-indigo-50 to-indigo-100 rounded-xl border border-indigo-200 mb-8">
-            <div className="text-3xl font-bold text-indigo-700 mb-1">
-              {results?.stroopEffect || 0} ms
-            </div>
-            <div className="text-sm font-medium text-indigo-600 uppercase tracking-wide">
-              Stroop Effect
-            </div>
-            <div className="text-xs text-indigo-500 mt-1">
-              Incongruent - Congruent RT difference
-            </div>
-          </div>
-
-          <div className="flex gap-4 justify-center">
-            {showResults && onRetake && (
-              <button
-                onClick={() => {
-                  onRetake();
-                  setStatus("instructions");
-                  setResults(null);
-                  setError("");
-                }}
-                className="bg-purple-600 cursor-pointer text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
-              >
-                Retake Test
-              </button>
-            )}
-            <button
-              onClick={() => router.push("/tests")}
-              className="bg-gray-600 cursor-pointer text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
-            >
-              Back to Tests
-            </button>
-          </div>
-        </div>
-      </div>
+      <PreviousResultCard
+        testName="Visual Stroop Test"
+        testId="stroopTest"
+        result={results || previousResult}
+        onRetake={() => {
+          if (onRetake) onRetake();
+          setStatus("instructions");
+          setResults(null);
+          setError("");
+        }}
+        formatResults={()=>{
+          return {
+            totalTrials: previousResult.metrics.totalTrials,
+            accuracy: previousResult.metrics.accuracy,
+            averageRT: previousResult.metrics.averageRT,
+            stroopEffect: previousResult.metrics.stroopEffect,
+          }
+        }}
+      />
     );
   }
 
@@ -1356,7 +1103,7 @@ export default function StroopTest({
                   <li>The test includes tutorial and practice trials</li>
                 </ul>
           </div>
-            </div>
+        </div>
 
             <div className="flex flex-col items-center">
               <h2 className="text-2xl font-semibold text-gray-800 mb-4">
@@ -1371,7 +1118,7 @@ export default function StroopTest({
                   <div className="p-3 bg-white rounded border border-pink-200">
                     <div className="font-semibold text-pink-800">
                       Control Condition
-                    </div>
+          </div>
                     <div className="text-xs mt-1">
                       Arrows appear in center of screen
                     </div>
@@ -1408,7 +1155,7 @@ export default function StroopTest({
       )}
 
       {status === "running" && (
-        <div id="jspsych-container" className="w-full"></div>
+        <div id="jspsych-target" className="w-full"></div>
       )}
 
       {status === "saving" && (

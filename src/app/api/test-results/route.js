@@ -36,8 +36,7 @@ function processTestResults(testId, results) {
  */
 function processStroopResults(results) {
   try {
-    console.log('Processing Visual Stroop results:', results);
-    
+
     // Handle new Visual Stroop format with control and experimental conditions
     if (results.control && results.experimental) {
       return processVisualStroopResults(results);
@@ -120,20 +119,8 @@ function processStroopResults(results) {
  * @returns {Object} Processed metrics
  */
 function processVisualStroopResults(results) {
-  console.log('processVisualStroopResults input:', JSON.stringify(results, null, 2));
-  
   const controlData = results.control || [];
   const experimentalData = results.experimental || [];
-  
-  console.log('Control trials count:', controlData.length);
-  console.log('Experimental trials count:', experimentalData.length);
-  
-  if (controlData.length > 0) {
-    console.log('Sample control trial:', controlData[0]);
-  }
-  if (experimentalData.length > 0) {
-    console.log('Sample experimental trial:', experimentalData[0]);
-  }
   
   // Process control condition
   const controlMetrics = calculateConditionMetrics(controlData, 'control');
@@ -141,28 +128,18 @@ function processVisualStroopResults(results) {
   // Process experimental condition
   const experimentalMetrics = calculateConditionMetrics(experimentalData, 'experimental');
   
-  console.log('Processed control metrics:', controlMetrics);
-  console.log('Processed experimental metrics:', experimentalMetrics);
-  
   // Calculate Stroop effect (difference between incongruent and congruent trials in experimental condition)
-  const congruentTrials = experimentalData.filter(t => t.congruent && t.correct);
-  const incongruentTrials = experimentalData.filter(t => !t.congruent && t.correct);
-  
-  console.log('Congruent trials found:', congruentTrials.length);
-  console.log('Incongruent trials found:', incongruentTrials.length);
+  const congruentTrials = experimentalData.filter(t => t.congruent === true && t.correct === true);
+  const incongruentTrials = experimentalData.filter(t => t.congruent === false && t.correct === true);
   
   const congruentAvgRT = congruentTrials.length > 0 
-    ? congruentTrials.reduce((sum, t) => sum + t.reaction_time, 0) / congruentTrials.length
+    ? congruentTrials.reduce((sum, t) => sum + (t.reaction_time || t.rt || 0), 0) / congruentTrials.length
     : 0;
   const incongruentAvgRT = incongruentTrials.length > 0 
-    ? incongruentTrials.reduce((sum, t) => sum + t.reaction_time, 0) / incongruentTrials.length
+    ? incongruentTrials.reduce((sum, t) => sum + (t.reaction_time || t.rt || 0), 0) / incongruentTrials.length
     : 0;
   
   const stroopEffect = Math.round(incongruentAvgRT - congruentAvgRT);
-  
-  console.log('Congruent avg RT:', congruentAvgRT);
-  console.log('Incongruent avg RT:', incongruentAvgRT);
-  console.log('Stroop effect:', stroopEffect);
   
   const finalResults = {
     control: controlMetrics,
@@ -179,7 +156,6 @@ function processVisualStroopResults(results) {
     incongruentRT: Math.round(incongruentAvgRT)
   };
   
-  console.log('Final processed results:', finalResults);
   return finalResults;
 }
 
@@ -190,10 +166,7 @@ function processVisualStroopResults(results) {
  * @returns {Object} Condition metrics
  */
 function calculateConditionMetrics(trials, condition) {
-  console.log(`calculateConditionMetrics for ${condition}:`, trials.length, 'trials');
-  
   if (!Array.isArray(trials) || trials.length === 0) {
-    console.log(`No trials found for ${condition}`);
     return {
       totalTrials: 0,
       correctTrials: 0,
@@ -202,17 +175,13 @@ function calculateConditionMetrics(trials, condition) {
     };
   }
   
-  console.log(`Sample trial for ${condition}:`, trials[0]);
-  
-  const correctTrials = trials.filter(t => t.correct);
-  console.log(`Correct trials for ${condition}:`, correctTrials.length);
-  
+  const correctTrials = trials.filter(t => t.correct === true);
   const accuracy = Math.round((correctTrials.length / trials.length) * 100);
   
   const avgRT = correctTrials.length > 0 
     ? Math.round(correctTrials.reduce((sum, t) => {
-        console.log(`RT for trial:`, t.reaction_time);
-        return sum + t.reaction_time;
+        const rt = t.reaction_time || t.rt || 0;
+        return sum + rt;
       }, 0) / correctTrials.length)
     : 0;
   
@@ -223,7 +192,6 @@ function calculateConditionMetrics(trials, condition) {
     avgRT
   };
   
-  console.log(`Final metrics for ${condition}:`, result);
   return result;
 }
 
@@ -234,8 +202,7 @@ function calculateConditionMetrics(trials, condition) {
  */
 function processTrailMakingResults(results) {
   try {
-    console.log('Processing Trail Making results:', results);
-    
+
     // Parse results if it's a string
     const data = typeof results === 'string' ? JSON.parse(results) : results;
     
@@ -281,11 +248,10 @@ function processTrailMakingResults(results) {
  */
 function processCorsiBlocksResults(results) {
   try {
-    console.log('Processing Corsi Blocks results:', results);
-    
+
     // Handle the new structure with metrics already calculated (from the test component)
     if (results.metrics) {
-      console.log('Found pre-calculated metrics:', results.metrics);
+    
       return {
         forwardSpan: results.metrics.forwardSpan || 0,
         backwardSpan: results.metrics.backwardSpan || 0,
@@ -300,8 +266,7 @@ function processCorsiBlocksResults(results) {
     
     // Handle the structure with forwardTrials and backwardTrials
     if (results.forwardTrials && results.backwardTrials) {
-      console.log('Processing forwardTrials and backwardTrials');
-      
+
       const forwardTrials = results.forwardTrials || [];
       const backwardTrials = results.backwardTrials || [];
       
@@ -353,8 +318,7 @@ function processCorsiBlocksResults(results) {
       return processCorsiSpanResults(results, 'combined');
     }
     
-    // Default fallback
-    console.log('Using default fallback for Corsi results');
+
     return {
       forwardSpan: 0,
       backwardSpan: 0,
@@ -452,8 +416,7 @@ function processCorsiSpanResults(spanResults, version) {
  */
 function processFivePointsResults(results) {
   try {
-    console.log('Processing Five Points results:', results);
-    
+
     // Handle the Five Points test data structure
     if (results && typeof results === 'object') {
   return {
@@ -493,15 +456,12 @@ function processFivePointsResults(results) {
  * @returns {Promise<NextResponse>} Response with saved test result
  */
 export async function POST(request) {
+
   try {
     const body = await request.json();
     let { participantId, testId, results } = body;
     
-    console.log('=== API POST Request ===');
-    console.log('Participant ID:', participantId);
-    console.log('Test ID:', testId);
-    console.log('Raw results received:', JSON.stringify(results, null, 2));
-    
+
     if (!participantId || !testId) {
       return NextResponse.json(
         { error: 'Participant ID and test ID are required' },
@@ -525,25 +485,23 @@ export async function POST(request) {
     }
     
     // Ensure participant has all required fields
-    if (!participant.educationLevel) {
-      participant.educationLevel = 'other'; // Set a default value if missing
+    if (!participant.education) {
+      participant.education = 'other'; // Set a default value if missing
     }
     
-    // Process and calculate metrics based on test type
-    console.log('Processing results for test:', testId);
+
     const processedResults = processTestResults(testId, results);
-    console.log('Processed results:', JSON.stringify(processedResults, null, 2));
-    
+
     // Create test result object with all required fields
     const testResult = {
       testId: testId, // Ensure testId is a string and matches the enum in schema
       completedAt: new Date(),
       rawData: results, // Ensure rawData is provided
-      metrics: processedResults // Ensure metrics is provided
+      metrics: processedResults, // Ensure metrics is provided
+      education: participant.education
     };
     
-    console.log('Test result object to save:', JSON.stringify(testResult, null, 2));
-    
+
     // Initialize testResults array if it doesn't exist
     if (!participant.testResults) {
       participant.testResults = [];
@@ -557,11 +515,11 @@ export async function POST(request) {
     if (existingTestIndex >= 0) {
       // Update existing test result
       participant.testResults[existingTestIndex] = testResult;
-      console.log('Updated existing test result');
+
     } else {
       // Add new test result
       participant.testResults.push(testResult);
-      console.log('Added new test result');
+ 
     }
     
     // Save participant directly to MongoDB to bypass schema validation
@@ -572,12 +530,12 @@ export async function POST(request) {
         { 
           $set: { 
             testResults: participant.testResults,
-            educationLevel: participant.educationLevel 
+            education: participant.education 
           } 
         }
       );
       
-      console.log('Successfully saved to database');
+
       return NextResponse.json({ success: true, result: testResult });
     } catch (mongoError) {
       console.error('MongoDB error:', mongoError);

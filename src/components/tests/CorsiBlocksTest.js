@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import LoadingSpinner from '../common/LoadingSpinner';
+import PreviousResultCard from './PreviousResultCard';
 
 // Import JsPsych plugins dynamically to avoid SSR issues
 let setupJsPsych, createJsPsychContainer, cleanupJsPsych;
 let htmlKeyboardResponse, htmlButtonResponse, preload, instructions;
 
-export default function CorsiBlocksTest({ participantId, showResults = false, previousResult = null, onRetake = null }) {
+export default function CorsiBlocksTest({ participantId, showResults = false, previousResult = null, onRetake = null, onTestComplete = null }) {
   const router = useRouter();
   const [status, setStatus] = useState(showResults ? 'results' : 'instructions'); 
   const [error, setError] = useState(null);
@@ -19,8 +20,7 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
   const formatResults = (results) => {
     if (!results) return null;
     
-    console.log('formatResults input:', results);
-    
+
     // Handle both metrics and direct results structure
     let data = results;
     
@@ -155,11 +155,17 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
     try {
       setStatus('saving');
       
-      const response = await axios.post('/api/test-results', {
-        participantId,
-        testId: 'corsiBlocksTest',
-        results: testResults
-      });
+      if (onTestComplete) {
+        // Use the parent's save function which handles progress updates
+        await onTestComplete(testResults);
+      } else {
+        // Fallback to direct API call
+        const response = await axios.post('/api/test-results', {
+          participantId,
+          testId: 'corsiBlocksTest',
+          results: testResults
+        });
+      }
       
       setResults(formatResults(testResults));
       setStatus('results');
@@ -174,10 +180,10 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
     setStatus('running');
     
     setTimeout(() => {
-      createJsPsychContainer();
+    createJsPsychContainer();
 
       // Test parameters - 7 trials, 8 blocks, span 2-8
-      const startingSpan = 2;
+    const startingSpan = 2;
       const maxSpan = 8;
       const numTrials = 7;
       const numBlocks = 8;
@@ -244,7 +250,7 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
         
         currentTrialIndex++;
       },
-      display_element: 'jspsych-container',
+      display_element: 'jspsych-target',
       show_progress_bar: false,
       auto_update_progress_bar: false
     });
@@ -788,7 +794,7 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
       const span = startingSpan + (trial - 1); // span 2 for trial 1, span 3 for trial 2, etc.
       forwardTrials.push(createCorsiTrial(span, trial, 'forward'));
     }
-    
+
     // Add transition screen between forward and backward
     timeline.push({
       timeline: forwardTrials
@@ -822,7 +828,7 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
     for (let trial = 1; trial <= numTrials; trial++) {
       const span = startingSpan + (trial - 1); // span 2 for trial 1, span 3 for trial 2, etc.
       backwardTrials.push(createCorsiTrial(span, trial, 'backward'));
-    }
+      }
     
     timeline.push({
       timeline: backwardTrials
@@ -838,7 +844,7 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
 
 
   if (status === 'error') {
-    return (
+  return (
       <div className="flex flex-col items-center justify-center py-12">
         <div className="bg-white rounded-xl shadow-xl p-8 max-w-md w-full text-center">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -861,86 +867,18 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
 
   if (status === 'results' && results) {
     return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <div className="bg-white rounded-xl shadow-xl p-8 max-w-2xl w-full">
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <h2 className="text-3xl font-bold text-gray-800 mb-2">Test Complete!</h2>
-            <p className="text-gray-600">Corsi Blocks Test Results</p>
-            {showResults && (
-              <p className="text-sm text-gray-500 mt-2">
-                Completed on {new Date(results?.completedAt || '').toLocaleDateString()} at {new Date(results?.completedAt || '').toLocaleTimeString()}
-              </p>
-            )}
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="text-center p-6 bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl border border-purple-200">
-              <div className="text-4xl font-bold text-purple-700 mb-1">{results?.forwardSpan || 0}</div>
-              <div className="text-sm font-medium text-purple-600 uppercase tracking-wide">Forward Span</div>
-              <div className="text-xs text-purple-500 mt-1">Highest achieved</div>
-            </div>
-            
-            <div className="text-center p-6 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl border border-blue-200">
-              <div className="text-4xl font-bold text-blue-700 mb-1">{results?.backwardSpan || 0}</div>
-              <div className="text-sm font-medium text-blue-600 uppercase tracking-wide">Backward Span</div>
-              <div className="text-xs text-blue-500 mt-1">Highest achieved</div>
-            </div>
-            
-            <div className="text-center p-6 bg-gradient-to-r from-indigo-50 to-indigo-100 rounded-xl border border-indigo-200">
-              <div className="text-4xl font-bold text-indigo-700 mb-1">{results?.totalSpan || 0}</div>
-              <div className="text-sm font-medium text-indigo-600 uppercase tracking-wide">Total Span</div>
-              <div className="text-xs text-indigo-500 mt-1">Forward + Backward</div>
-            </div>
-            
-            <div className="text-center p-6 bg-gradient-to-r from-green-50 to-green-100 rounded-xl border border-green-200">
-              <div className="text-4xl font-bold text-green-700 mb-1">{results?.accuracy || 0}%</div>
-              <div className="text-sm font-medium text-green-600 uppercase tracking-wide">Overall Accuracy</div>
-              <div className="text-xs text-green-500 mt-1">All trials</div>
-            </div>
-            
-            <div className="text-center p-6 bg-gradient-to-r from-teal-50 to-teal-100 rounded-xl border border-teal-200">
-              <div className="text-4xl font-bold text-teal-700 mb-1">{results?.forwardAccuracy || 0}%</div>
-              <div className="text-sm font-medium text-teal-600 uppercase tracking-wide">Forward Accuracy</div>
-              <div className="text-xs text-teal-500 mt-1">Forward trials only</div>
-            </div>
-            
-            <div className="text-center p-6 bg-gradient-to-r from-cyan-50 to-cyan-100 rounded-xl border border-cyan-200">
-              <div className="text-4xl font-bold text-cyan-700 mb-1">{results?.backwardAccuracy || 0}%</div>
-              <div className="text-sm font-medium text-cyan-600 uppercase tracking-wide">Backward Accuracy</div>
-              <div className="text-xs text-cyan-500 mt-1">Backward trials only</div>
-            </div>
-          </div>
-
-        
-
-          <div className="flex gap-4 justify-center">
-            {showResults && onRetake && (
-              <button
-                onClick={() => {
-                  onRetake();
-                  setStatus('instructions');
-                  setResults(null);
-                  setError('');
-                }}
-                className="bg-purple-600 cursor-pointer text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
-              >
-                Retake Test
-              </button>
-            )}
-            <button
-              onClick={() => router.push('/tests')}
-              className="bg-gray-600 cursor-pointer text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
-            >
-              Back to Tests
-            </button>
-          </div>
-        </div>
-      </div>
+      <PreviousResultCard
+        testName="Corsi Blocks Test"
+        testId="corsiBlocksTest"
+        result={results}
+        onRetake={() => {
+          if (onRetake) onRetake();
+          setStatus('instructions');
+          setResults(null);
+          setError('');
+        }}
+        formatResults={formatResults}
+      />
     );
   }
 
@@ -969,7 +907,7 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
                       strokeWidth={2}
                       d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
-                  </svg>
+            </svg>
                   Instructions
                 </h2>
                 <div className="space-y-4 text-gray-700 leading-relaxed">
@@ -985,7 +923,7 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
                     Each part has <strong>7 trials</strong> with increasing difficulty, starting with 2 blocks 
                     and ending with 8 blocks.
                   </p>
-                </div>
+          </div>
               </div>
 
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
@@ -1050,7 +988,7 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
       )}
 
       {status === 'running' && (
-        <div id="jspsych-container" className="w-full"></div>
+        <div id="jspsych-target" className="w-full"></div>
       )}
 
       {status === 'saving' && (

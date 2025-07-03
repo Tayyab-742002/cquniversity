@@ -2,87 +2,112 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth, useUser } from '@clerk/nextjs';
 import MainLayout from '@/components/layout/MainLayout';
 import CorsiBlocksTest from '@/components/tests/CorsiBlocksTest';
-import { useDeviceAccess, DeviceAccessGuard } from '@/hooks/useDeviceAccess';
+import { checkPreviousTestResult } from '@/utils/saveTestResults';
 import axios from 'axios';
 
-function CorsiBlocksTestContent() {
-  const { participantId, isAuthenticated } = useDeviceAccess();
+export default function CorsiBlocksTestPage() {
+  const router = useRouter();
+  const { userId } = useAuth();
+  const [participantData, setParticipantData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [previousResult, setPreviousResult] = useState(null);
+  const [showResults, setShowResults] = useState(false);
 
   useEffect(() => {
-    // Only proceed when authentication is complete
-    if (!isAuthenticated || !participantId) {
-      return;
-    }
-
-    // Check if participant has already completed this test
-    const checkPreviousResults = async () => {
+    const getParticipantData = async () => {
       try {
-        console.log('🔍 Checking for previous Corsi Blocks test results...');
-        const response = await axios.get(`/api/test-results/check?participantId=${participantId}&testId=corsiBlocksTest`);
+        // Get participant data (middleware already ensures user is authenticated)
+        const response = await fetch('/api/participants');
+        const data = await response.json();
         
-        if (response.data.result) {
-          console.log('✅ Found previous test result - showing results view');
-          setPreviousResult(response.data.result);
-        } else {
-          console.log('🆕 No previous test found - ready for new test');
+        if (data.registered) {
+          setParticipantData(data.participant);
+          
+          // Check for previous test results
+          const result = await checkPreviousTestResult(data.participant.id, 'corsiBlocksTest');
+          if (result) {
+            setPreviousResult(result);
+            setShowResults(true);
+          }
         }
       } catch (error) {
-        console.error('❌ Error checking previous test results:', error);
-        // Continue without previous results
+        console.error('❌ Error fetching participant data:', error);
       } finally {
         setLoading(false);
       }
     };
-    
-    checkPreviousResults();
-  }, [participantId, isAuthenticated]);
 
-  const handleRetake = () => {
-    console.log('🔄 User chose to retake the test');
-    setPreviousResult(null);
+    if (userId) {
+      getParticipantData();
+    }
+  }, [userId]);
+
+  const handleTestComplete = async (testResults) => {
+    try {
+      await axios.post('/api/test-results', {
+        participantId: participantData.id,
+        testId: 'corsiBlocksTest',
+        results: testResults,
+        completedAt: new Date().toISOString()
+      });
+      
+      // Update study progress
+      await updateStudyProgress('corsiBlocksTest');
+      
+
+      router.push('/tests');
+    } catch (error) {
+      console.error('❌ Error saving test results:', error);
+      alert('Failed to save test results. Please try again.');
+    }
   };
 
-  // Show loading only while checking for previous results (after authentication)
+  const updateStudyProgress = async (testId) => {
+    try {
+      await axios.post('/api/participants/update-progress', {
+        participantId: participantData.id,
+        testId: testId
+      });
+    } catch (error) {
+      console.error('❌ Error updating study progress:', error);
+    }
+  };
+
+  const handleRetakeTest = () => {
+    setPreviousResult(null);
+    setShowResults(false);
+  };
+
   if (loading) {
     return (
       <MainLayout>
         <div className="flex items-center justify-center h-64">
           <div className="animate-pulse flex flex-col items-center">
-            <div className="w-12 h-12 rounded-full bg-blue-100 border-4 border-blue-300 animate-spin mb-4"></div>
-            <p className="text-gray-600">Checking for previous test results...</p>
+            <div className="w-12 h-12 rounded-full bg-primary/20 mb-4">
+              <svg className="w-6 h-6 m-3 text-primary animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </div>
+            <p className="text-muted-foreground">Loading test...</p>
           </div>
         </div>
       </MainLayout>
     );
   }
+
   return (
     <MainLayout>
-      <div className="max-w-4xl mx-auto py-8">
-        {previousResult ? (
-          <CorsiBlocksTest 
-            participantId={participantId}
-            showResults={true}
-            previousResult={previousResult}
-            onRetake={handleRetake}
-          />
-        ) : (
-          <CorsiBlocksTest 
-            participantId={participantId}
-          />
-        )}
-      </div>
+      <CorsiBlocksTest 
+        participantId={participantData?.id}
+        showResults={showResults}
+        previousResult={previousResult}
+        onRetake={handleRetakeTest}
+        onTestComplete={handleTestComplete}
+      />
     </MainLayout>
-  );
-}
-
-export default function CorsiBlocksTestPage() {
-  return (
-    <DeviceAccessGuard testName="Corsi Blocks Test">
-      <CorsiBlocksTestContent />
-    </DeviceAccessGuard>
   );
 } 

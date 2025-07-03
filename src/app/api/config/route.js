@@ -12,11 +12,7 @@ export async function GET() {
     NEXT_PUBLIC_APP_URL: !!process.env.NEXT_PUBLIC_APP_URL
   };
   
-  // Log for debugging
-  console.log('Environment variables status:', envStatus);
-  console.log('MONGODB_URI:', process.env.MONGODB_URI ? 
-    process.env.MONGODB_URI.replace(/\/\/([^:]+):([^@]+)@/, '//***:***@') : 
-    'Not set');
+
   
   return NextResponse.json({
     status: 'ok',
