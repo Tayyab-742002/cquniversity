@@ -10,6 +10,7 @@ export default function FivePointTest({ participantId, showResults = false, prev
   const [currentSquare, setCurrentSquare] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState(180); // 3 minutes = 180 seconds
   const [results, setResults] = useState(null);
+  const [error, setError] = useState(''); // Add missing error state
   const [allDesigns, setAllDesigns] = useState([]); // Store all completed designs
   const [currentLines, setCurrentLines] = useState([]); // Current square's lines
   const [selectedDots, setSelectedDots] = useState([]); // Currently selected dots for drawing
