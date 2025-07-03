@@ -1,22 +1,36 @@
-import { NextResponse } from 'next/server';
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
-export function middleware(request) {
-  // Check if MongoDB URI is set
-  if (!process.env.MONGODB_URI) {
-    console.error('MONGODB_URI environment variable is not set');
-    
-    // Only show the error page in production
-    if (process.env.NODE_ENV === 'production') {
-      return NextResponse.rewrite(new URL('/api/error?code=config_error', request.url));
-    }
+// Define protected routes that require authentication
+const isProtectedRoute = createRouteMatcher([
+  '/tests(.*)',
+  '/dashboard(.*)',
+  '/api/participants(.*)',
+  '/api/test-results(.*)',
+  '/api/admin(.*)',
+  '/api/debug/participants(.*)',
+  '/api/debug/test-results(.*)',
+  '/api/debug/migrate-schema(.*)'
+]);
+
+// Define public debug routes that don't need auth
+const isPublicDebugRoute = createRouteMatcher([
+  '/api/debug/db-status(.*)'
+]);
+
+export default clerkMiddleware(async (auth, req) => {
+  // Only protect specific routes that require authentication
+  // Skip protection for public debug routes
+  if (isProtectedRoute(req) && !isPublicDebugRoute(req)) {
+    await auth.protect();
   }
-  
-  return NextResponse.next();
-}
+  // All other routes (including /, /about, /sign-in, /sign-up) are public
+});
 
-// Only run the middleware on specific paths
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|public/|api/error).*)',
+    // Skip Next.js internals and all static files, unless found in search params
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    // Always run for API routes
+    '/(api|trpc)(.*)',
   ],
 }; 

@@ -1,193 +1,119 @@
 import { NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import connectToDatabase from '@/lib/mongodb';
 import Participant from '@/models/Participant';
-import { withAdminAuth } from '@/lib/adminAuth';
 
-function escapeCSV(field) {
-  if (field === null || field === undefined) return '';
-  
-  const str = String(field);
-  // If field contains comma, quote, or newline, wrap in quotes and escape quotes
-  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-    return `"${str.replace(/"/g, '""')}"`;
-  }
-  return str;
-}
-
-function flattenTestResults(participant) {
-  const baseData = {
-    participantId: participant._id.toString(),
-    name: participant.name,
-    email: participant.email,
-    age: participant.age,
-    gender: participant.gender,
-    educationLevel: participant.educationLevel,
-    deviceId: participant.deviceId || '',
-    fingerprintConfidence: participant.fingerprintConfidence || 0,
-    ipAddress: participant.ipAddress || '',
-    registeredAt: participant.registeredAt ? new Date(participant.registeredAt).toISOString() : ''
-  };
-
-  if (!participant.testResults || participant.testResults.length === 0) {
-    return [{
-      ...baseData,
-      testId: '',
-      completedAt: '',
-      // Add empty columns for all possible metrics
-      accuracy: '',
-      totalTrials: '',
-      correctTrials: '',
-      averageRT: '',
-      congruentRT: '',
-      incongruentRT: '',
-      stroopEffect: '',
-      forwardSpan: '',
-      backwardSpan: '',
-      totalSpan: '',
-      forwardAccuracy: '',
-      backwardAccuracy: '',
-      sampleATime: '',
-      sampleAErrors: '',
-      trialATime: '',
-      trialAErrors: '',
-      sampleBTime: '',
-      sampleBErrors: '',
-      trialBTime: '',
-      trialBErrors: '',
-      bMinusA: '',
-      newDesigns: '',
-      repetitions: '',
-      mistakes: '',
-      totalDesigns: ''
-    }];
-  }
-
-  return participant.testResults.map(result => {
-    const metrics = result.metrics || {};
-    
-    return {
-      ...baseData,
-      testId: result.testId || '',
-      completedAt: result.completedAt ? new Date(result.completedAt).toISOString() : '',
-      
-      // Stroop Test metrics
-      accuracy: metrics.accuracy || '',
-      totalTrials: metrics.totalTrials || '',
-      correctTrials: metrics.correctTrials || '',
-      averageRT: metrics.averageRT || '',
-      congruentRT: metrics.congruentRT || '',
-      incongruentRT: metrics.incongruentRT || '',
-      stroopEffect: metrics.stroopEffect || '',
-      
-      // Corsi Blocks metrics
-      forwardSpan: metrics.forwardSpan || '',
-      backwardSpan: metrics.backwardSpan || '',
-      totalSpan: metrics.totalSpan || '',
-      forwardAccuracy: metrics.forwardAccuracy || '',
-      backwardAccuracy: metrics.backwardAccuracy || '',
-      
-      // Trail Making metrics (using rawData for detailed results)
-      sampleATime: result.rawData?.sampleA?.time || '',
-      sampleAErrors: result.rawData?.sampleA?.errors || '',
-      trialATime: result.rawData?.trialA?.time || '',
-      trialAErrors: result.rawData?.trialA?.errors || '',
-      sampleBTime: result.rawData?.sampleB?.time || '',
-      sampleBErrors: result.rawData?.sampleB?.errors || '',
-      trialBTime: result.rawData?.trialB?.time || '',
-      trialBErrors: result.rawData?.trialB?.errors || '',
-      bMinusA: result.rawData?.bMinusA || '',
-      
-      // Five Point Test metrics
-      newDesigns: metrics.newDesigns || '',
-      repetitions: metrics.repetitions || '',
-      mistakes: metrics.mistakes || '',
-      totalDesigns: metrics.totalDesigns || ''
-    };
-  });
-}
-
-async function exportData() {
+export async function GET() {
   try {
+    // Check authentication (admin access)
+    const { userId } = auth();
+    
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Admin access required' },
+        { status: 401 }
+      );
+    }
+
     await connectToDatabase();
     
-    // Get all participants with their test results
     const participants = await Participant.find({}).lean();
     
-    // Flatten data for CSV
-    const flatData = [];
-    participants.forEach(participant => {
-      const rows = flattenTestResults(participant);
-      flatData.push(...rows);
-    });
+    // Create comprehensive export data
+    const exportData = participants.map(participant => {
+      const testResults = participant.testResults || [];
+      
+      // Base participant data
+      const baseData = {
+        participantId: participant._id.toString(),
+        clerkId: participant.clerkId,
+        firstName: participant.firstName,
+        lastName: participant.lastName,
+        fullName: `${participant.firstName} ${participant.lastName}`,
+        email: participant.email,
+        age: participant.age,
+        gender: participant.gender,
+        education: participant.education,
+        studyStatus: participant.studyStatus,
+        authMethod: 'Google (Clerk)',
+        registeredAt: participant.createdAt,
+        lastLoginAt: participant.lastLoginAt,
+        testsCompleted: participant.testsCompleted?.length || 0
+      };
+      
+      // If no test results, return base data with empty test fields
+      if (testResults.length === 0) {
+        return {
+          ...baseData,
+          testId: '',
+          testCompletedAt: '',
+          testMetrics: '',
+          testRawData: ''
+        };
+      }
+      
+      // Create one row per test result
+      return testResults.map(result => ({
+        ...baseData,
+        testId: result.testId,
+        testCompletedAt: result.completedAt,
+        testMetrics: JSON.stringify(result.metrics || {}),
+        testRawData: JSON.stringify(result.rawData || {})
+      }));
+    }).flat();
     
     // Define CSV headers
     const headers = [
       'participantId',
-      'name',
+      'clerkId', 
+      'firstName',
+      'lastName',
+      'fullName',
       'email',
       'age',
       'gender',
-      'educationLevel',
-      'deviceId',
-      'fingerprintConfidence',
-      'ipAddress',
+      'education',
+      'studyStatus',
+      'authMethod',
       'registeredAt',
+      'lastLoginAt',
+      'testsCompleted',
       'testId',
-      'completedAt',
-      // Stroop Test columns
-      'accuracy',
-      'totalTrials',
-      'correctTrials',
-      'averageRT',
-      'congruentRT',
-      'incongruentRT',
-      'stroopEffect',
-      // Corsi Blocks columns
-      'forwardSpan',
-      'backwardSpan',
-      'totalSpan',
-      'forwardAccuracy',
-      'backwardAccuracy',
-      // Trail Making columns
-      'sampleATime',
-      'sampleAErrors',
-      'trialATime',
-      'trialAErrors',
-      'sampleBTime',
-      'sampleBErrors',
-      'trialBTime',
-      'trialBErrors',
-      'bMinusA',
-      // Five Point Test columns
-      'newDesigns',
-      'repetitions',
-      'mistakes',
-      'totalDesigns'
+      'testCompletedAt',
+      'testMetrics',
+      'testRawData'
     ];
     
-    // Generate CSV content
-    let csvContent = headers.join(',') + '\n';
+    // Convert to CSV
+    const csvContent = [
+      headers.join(','),
+      ...exportData.map(row => 
+        headers.map(header => {
+          const value = row[header] || '';
+          // Escape commas and quotes in CSV values
+          return typeof value === 'string' && (value.includes(',') || value.includes('"')) 
+            ? `"${value.replace(/"/g, '""')}"` 
+            : value;
+        }).join(',')
+      )
+    ].join('\n');
     
-    flatData.forEach(row => {
-      const csvRow = headers.map(header => escapeCSV(row[header])).join(',');
-      csvContent += csvRow + '\n';
-    });
-    
-    // Return CSV as downloadable file
-    return new NextResponse(csvContent, {
+    // Set response headers for file download
+    const response = new NextResponse(csvContent, {
+      status: 200,
       headers: {
         'Content-Type': 'text/csv',
-        'Content-Disposition': `attachment; filename="psycotest_data_${new Date().toISOString().split('T')[0]}.csv"`,
+        'Content-Disposition': `attachment; filename="psycotest-export-${new Date().toISOString().split('T')[0]}.csv"`,
         'Cache-Control': 'no-cache'
       }
     });
+    
+    return response;
   } catch (error) {
-    console.error('Error exporting data:', error);
+    console.error('Export error:', error);
     return NextResponse.json(
       { error: 'Failed to export data' },
       { status: 500 }
     );
   }
-}
-
-export const GET = withAdminAuth(exportData); 
+} 

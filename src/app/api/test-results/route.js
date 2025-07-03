@@ -145,17 +145,17 @@ function processVisualStroopResults(results) {
   console.log('Processed experimental metrics:', experimentalMetrics);
   
   // Calculate Stroop effect (difference between incongruent and congruent trials in experimental condition)
-  const congruentTrials = experimentalData.filter(t => t.congruent && t.correct);
-  const incongruentTrials = experimentalData.filter(t => !t.congruent && t.correct);
+  const congruentTrials = experimentalData.filter(t => t.congruent === true && t.correct === true);
+  const incongruentTrials = experimentalData.filter(t => t.congruent === false && t.correct === true);
   
   console.log('Congruent trials found:', congruentTrials.length);
   console.log('Incongruent trials found:', incongruentTrials.length);
   
   const congruentAvgRT = congruentTrials.length > 0 
-    ? congruentTrials.reduce((sum, t) => sum + t.reaction_time, 0) / congruentTrials.length
+    ? congruentTrials.reduce((sum, t) => sum + (t.reaction_time || t.rt || 0), 0) / congruentTrials.length
     : 0;
   const incongruentAvgRT = incongruentTrials.length > 0 
-    ? incongruentTrials.reduce((sum, t) => sum + t.reaction_time, 0) / incongruentTrials.length
+    ? incongruentTrials.reduce((sum, t) => sum + (t.reaction_time || t.rt || 0), 0) / incongruentTrials.length
     : 0;
   
   const stroopEffect = Math.round(incongruentAvgRT - congruentAvgRT);
@@ -204,15 +204,16 @@ function calculateConditionMetrics(trials, condition) {
   
   console.log(`Sample trial for ${condition}:`, trials[0]);
   
-  const correctTrials = trials.filter(t => t.correct);
+  const correctTrials = trials.filter(t => t.correct === true);
   console.log(`Correct trials for ${condition}:`, correctTrials.length);
   
   const accuracy = Math.round((correctTrials.length / trials.length) * 100);
   
   const avgRT = correctTrials.length > 0 
     ? Math.round(correctTrials.reduce((sum, t) => {
-        console.log(`RT for trial:`, t.reaction_time);
-        return sum + t.reaction_time;
+        const rt = t.reaction_time || t.rt || 0;
+        console.log(`RT for trial:`, rt);
+        return sum + rt;
       }, 0) / correctTrials.length)
     : 0;
   
@@ -493,6 +494,8 @@ function processFivePointsResults(results) {
  * @returns {Promise<NextResponse>} Response with saved test result
  */
 export async function POST(request) {
+  console.log('=== API POST Request ===');
+  console.log('Request body:', request.body);
   try {
     const body = await request.json();
     let { participantId, testId, results } = body;

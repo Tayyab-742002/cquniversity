@@ -1,106 +1,209 @@
 import { NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import connectToDatabase from '@/lib/mongodb';
 import Participant from '@/models/Participant';
 
 export async function POST(request) {
   try {
-    // Connect to the database
-    await connectToDatabase();
+    // Get the authenticated user from Clerk
+    const { userId } = await auth();
     
-    // Get participant data from request body
-    const requestData = await request.json();
-    console.log('Received registration data:', requestData);
-    
-    // Validate required fields (using frontend field names)
-    const requiredFields = ['name', 'email', 'age', 'gender', 'education', 'deviceId'];
-    const missingFields = requiredFields.filter(field => !requestData[field]);
-    
-    if (missingFields.length > 0) {
-      console.log('Missing fields:', missingFields);
+    if (!userId) {
       return NextResponse.json(
-        { error: `Missing required fields: ${missingFields.join(', ')}` },
+        { error: 'Unauthorized - Please sign in' },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    console.log('📝 Registration attempt for user:', userId);
+
+    // Extract participant data
+    const { 
+      firstName, 
+      lastName, 
+      email, 
+      age, 
+      gender,
+      education,
+      profileImageUrl,
+      googleId
+    } = body;
+
+    // Validate required fields
+    if (!firstName || !lastName || !email || !age || !gender || !education) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
         { status: 400 }
       );
     }
-    
-    // Map frontend field names to database field names and normalize values
-    const participantData = {
-      name: requestData.name,
-      email: requestData.email,
-      age: requestData.age,
-      gender: requestData.gender === 'prefer not to say' ? 'prefer-not-to-say' : requestData.gender,
-      educationLevel: normalizeEducationLevel(requestData.education),
-      deviceId: requestData.deviceId,
-      deviceFingerprint: requestData.deviceFingerprint || {},
-      fingerprintConfidence: requestData.confidence || 0,
-      ipAddress: requestData.ipAddress || 'unknown'
-    };
-    
-    console.log('Mapped participant data:', participantData);
-    
-    // Helper function to normalize education level values
-    function normalizeEducationLevel(education) {
-      const educationMap = {
-        'high school': 'high-school',
-        'high-school': 'high-school',
-        'bachelor': 'bachelors',
-        'bachelors': 'bachelors',
-        "bachelor's": 'bachelors',
-        "bachelor's degree": 'bachelors',
-        'master': 'masters',
-        'masters': 'masters',
-        "master's": 'masters',
-        "master's degree": 'masters',
-        'phd': 'doctorate',
-        'doctorate': 'doctorate',
-        'other': 'other'
-      };
-      
-      const normalized = education.toLowerCase().trim();
-      return educationMap[normalized] || normalized.replace(/\s+/g, '-');
-    }
-    
-    // Check if participant with this device ID already exists
-    const existingParticipant = await Participant.findOne({ 
-      deviceId: participantData.deviceId 
-    });
+
+    await connectToDatabase();
+
+    // Check if user is already registered
+    const existingParticipant = await Participant.findOne({ clerkId: userId });
     
     if (existingParticipant) {
-      console.log('Device already registered:', {
-        deviceId: participantData.deviceId.substring(0, 8) + '...',
-        existingParticipant: existingParticipant.name
-      });
-      return NextResponse.json(
-        { error: 'This device has already been used for registration' },
-        { status: 409 }  // Conflict status code
-      );
+      console.log('🚫 User already registered:', userId);
+      return NextResponse.json({
+        error: 'USER_ALREADY_REGISTERED',
+        message: 'You have already registered for this study.',
+        participant: {
+          id: existingParticipant._id,
+          email: existingParticipant.email,
+          registeredAt: existingParticipant.createdAt,
+          studyStatus: existingParticipant.studyStatus
+        }
+      }, { status: 409 });
     }
-    
-    // Create new participant
-    const participant = await Participant.create(participantData);
-    
+
+    // Check for existing email (in case of account switching)
+    const existingByEmail = await Participant.findOne({ email });
+    if (existingByEmail) {
+      console.log('🚫 Email already registered:', { email });
+      return NextResponse.json({
+        error: 'EMAIL_ALREADY_REGISTERED', 
+        message: 'An account with this email already exists.'
+      }, { status: 409 });
+    }
+
+    // Create new participant with Clerk integration
+    const participant = new Participant({
+      clerkId: userId,
+      firstName,
+      lastName,
+      email,
+      age: parseInt(age),
+      gender,
+      education,
+      profileImageUrl: profileImageUrl || null,
+      googleId: googleId || null,
+      createdAt: new Date(),
+      lastLoginAt: new Date(),
+      testsCompleted: [],
+      studyStatus: 'registered'
+    });
+
+    const savedParticipant = await participant.save();
+
+    console.log('✅ Participant registered successfully:', {
+      id: savedParticipant._id,
+      clerkId: userId,
+      email: savedParticipant.email
+    });
+
     return NextResponse.json({
       success: true,
+      message: 'Registration successful',
       participant: {
-        id: participant._id,
-        name: participant.name,
-        email: participant.email
+        id: savedParticipant._id,
+        clerkId: userId,
+        email: savedParticipant.email,
+        fullName: savedParticipant.fullName,
+        studyStatus: savedParticipant.studyStatus
       }
     }, { status: 201 });
+
   } catch (error) {
-    console.error('Error registering participant:', error);
+    console.error('❌ Registration error:', error);
     
-    // Handle mongoose validation errors
-    if (error.name === 'ValidationError') {
-      const validationErrors = Object.values(error.errors).map(err => err.message);
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      if (error.keyPattern?.email) {
+        return NextResponse.json({
+          error: 'EMAIL_ALREADY_REGISTERED',
+          message: 'An account with this email already exists.'
+        }, { status: 409 });
+      }
+      if (error.keyPattern?.clerkId) {
+        return NextResponse.json({
+          error: 'USER_ALREADY_REGISTERED',
+          message: 'You have already registered for this study.'
+        }, { status: 409 });
+      }
+    }
+
+    return NextResponse.json(
+      { error: 'Registration failed', details: error.message },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET(request) {
+  try {
+    const { userId } = await auth();
+    
+    if (!userId) {
       return NextResponse.json(
-        { error: validationErrors.join(', ') },
-        { status: 400 }
+        { error: 'Unauthorized - Please sign in' },
+        { status: 401 }
       );
     }
+
+    await connectToDatabase();
     
+    const url = new URL(request.url);
+    const email = url.searchParams.get('email');
+    const clerkId = url.searchParams.get('clerkId');
+
+    // If specific user is requested
+    if (clerkId || email) {
+      const searchCriteria = clerkId ? { clerkId } : { email };
+      const participant = await Participant.findOne(searchCriteria);
+      
+      if (!participant) {
+        return NextResponse.json({ 
+          registered: false, 
+          message: 'User not registered' 
+        });
+      }
+      
+      return NextResponse.json({ 
+        registered: true, 
+        participant: {
+          id: participant._id,
+          clerkId: participant.clerkId,
+          email: participant.email,
+          fullName: participant.fullName,
+          studyStatus: participant.studyStatus,
+          registeredAt: participant.createdAt,
+          testsCompleted: participant.testsCompleted?.length || 0
+        }
+      });
+    }
+
+    // Get current user's participant record
+    const participant = await Participant.findOne({ clerkId: userId });
+    
+    if (!participant) {
+      return NextResponse.json({ 
+        registered: false, 
+        message: 'User not registered' 
+      });
+    }
+
+    return NextResponse.json({
+      registered: true,
+      participant: {
+        id: participant._id,
+        clerkId: participant.clerkId,
+        email: participant.email,
+        fullName: participant.fullName,
+        age: participant.age,
+        gender: participant.gender,
+        education: participant.education,
+        studyStatus: participant.studyStatus,
+        registeredAt: participant.createdAt,
+        testsCompleted: participant.testsCompleted,
+        testResults: participant.testResults
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ GET participants error:', error);
     return NextResponse.json(
-      { error: 'Failed to register participant' },
+      { error: 'Failed to fetch participant data' },
       { status: 500 }
     );
   }

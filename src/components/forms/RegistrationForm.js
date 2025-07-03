@@ -1,17 +1,16 @@
 'use client'
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useIpAddress } from '@/hooks/useIpAddress';
-import { checkDeviceRestriction } from '@/utils/checkIpRestriction';
-import { generateDeviceFingerprint } from '@/utils/deviceFingerprint';
-import axios from 'axios';
+import { useAuth, useUser } from '@clerk/nextjs';
 
 export default function RegistrationForm() {
   const router = useRouter();
-  const { ipAddress, loading: ipLoading, error: ipError } = useIpAddress();
+  const { isLoaded, userId } = useAuth();
+  const { user } = useUser();
   
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     age: '',
     gender: '',
@@ -20,61 +19,64 @@ export default function RegistrationForm() {
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [checkingDevice, setCheckingDevice] = useState(true);
-  const [deviceData, setDeviceData] = useState(null);
-  
-  // Check device restriction on component mount
+  const [isRegistered, setIsRegistered] = useState(false);
+  const [existingParticipant, setExistingParticipant] = useState(null);
+
+  // Auto-populate form with Clerk user data
   useEffect(() => {
-    const checkRestriction = async () => {
-      setCheckingDevice(true);
-      try {
-        console.log('🔍 Checking device registration status...');
-        const result = await checkDeviceRestriction();
+    if (isLoaded && user) {
+      setFormData(prev => ({
+        ...prev,
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.primaryEmailAddress?.emailAddress || ''
+      }));
+      
+      // Check if user is already registered
+      checkExistingRegistration();
+    }
+  }, [isLoaded, user]);
+
+  // Check if the user has already registered
+  const checkExistingRegistration = async () => {
+    try {
+      const response = await fetch('/api/participants');
+      const data = await response.json();
+      
+      if (data.registered) {
+        setIsRegistered(true);
+        setExistingParticipant(data.participant);
         
-        if (result.exists) {
-          setError(`This device has already been registered by ${result.participant.name}. Each device can only be used for one registration.`);
-          
-          // If the participant has already started tests, redirect them to the tests page
-          if (result.participant) {
-            sessionStorage.setItem('participantId', result.participant.id);
-            setTimeout(() => {
-              router.push('/tests');
-            }, 2000); // Give user time to read the message
-          }
-        } else {
-          // Store device data for registration
-          setDeviceData(result.deviceData);
-          console.log('✅ Device not registered - ready for new registration');
+        // If user is already registered and has started tests, redirect to tests
+        if (data.participant.testsCompleted?.length > 0) {
+          setTimeout(() => {
+            router.push('/tests');
+          }, 2000);
         }
-      } catch (err) {
-        console.error('Device restriction check error:', err);
-        // Generate fallback device data if checking fails
-        try {
-          const fallbackData = await generateDeviceFingerprint();
-          setDeviceData(fallbackData);
-          console.log('⚠️ Using fallback device fingerprint');
-        } catch (fallbackErr) {
-          console.error('Fallback fingerprint generation failed:', fallbackErr);
-          setError('Unable to verify device. Please refresh the page and try again.');
-        }
-      } finally {
-        setCheckingDevice(false);
       }
-    };
-    
-    checkRestriction();
-  }, [router]);
-  
+    } catch (error) {
+      console.error('❌ Registration check error:', error);
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: name === 'age' ? parseInt(value) || '' : value }));
+    setFormData(prev => ({ 
+      ...prev, 
+      [name]: name === 'age' ? parseInt(value) || '' : value 
+    }));
   };
   
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!deviceData) {
-      setError('Device verification in progress. Please wait a moment and try again.');
+    if (!isLoaded || !userId) {
+      setError('Please sign in to continue with registration.');
+      return;
+    }
+
+    if (isRegistered) {
+      setError('You have already registered for this study.');
       return;
     }
     
@@ -82,53 +84,124 @@ export default function RegistrationForm() {
     setError(null);
     
     try {
-      console.log('📝 Submitting registration with device data...');
+      console.log('📝 Submitting registration for Clerk user:', userId);
       
-      // Proceed with registration using device fingerprint
-      const response = await axios.post('/api/participants', {
-        ...formData,
-        deviceId: deviceData.deviceId,
-        deviceFingerprint: deviceData.fingerprint,
-        confidence: deviceData.confidence,
-        ipAddress: ipAddress || 'unknown'
+      const registrationData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        age: parseInt(formData.age),
+        gender: formData.gender,
+        education: formData.education,
+        profileImageUrl: user?.imageUrl,
+        googleId: user?.externalAccounts?.find(account => account.provider === 'google')?.providerUserId
+      };
+      
+      const response = await fetch('/api/participants', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(registrationData)
       });
       
-      if (response.data.success) {
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
         console.log('✅ Registration successful!');
-        // Store participant ID in session storage for test tracking
-        sessionStorage.setItem('participantId', response.data.participant.id);
-        // Redirect to tests page or dashboard
+        
+        // Store participant ID for easy access
+        sessionStorage.setItem('participantId', data.participant.id);
+        
+        // Redirect to tests page
         router.push('/tests');
+      } else {
+        throw new Error(data.message || data.error || 'Registration failed');
       }
+      
     } catch (err) {
-      console.error('Registration error:', err);
-      setError(err.response?.data?.error || 'Failed to register. Please try again.');
+      console.error('❌ Registration error:', err);
+      if (err.message.includes('USER_ALREADY_REGISTERED')) {
+        setError('You have already registered for this study.');
+        setIsRegistered(true);
+      } else if (err.message.includes('EMAIL_ALREADY_REGISTERED')) {
+        setError('An account with this email address already exists.');
+      } else {
+        setError(err.message || 'Registration failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
   };
-  
-  if (checkingDevice) {
+
+  // Loading state while Clerk initializes
+  if (!isLoaded) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-pulse flex flex-col items-center">
-          <div className="w-12 h-12 rounded-full bg-primary/20 mb-4"></div>
-          <p className="text-muted-foreground">🔍 Verifying device...</p>
-          <p className="text-sm text-muted-foreground mt-2">Generating device fingerprint for security</p>
+        <div className="animate-pulse flex flex-col items-center max-w-md text-center">
+          <div className="w-12 h-12 rounded-full bg-primary/20 mb-4 animate-spin">
+            <svg className="w-6 h-6 m-3 text-primary" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </div>
+          <p className="text-muted-foreground font-medium">🔐 Loading...</p>
+          <p className="text-sm text-muted-foreground mt-2">Initializing secure authentication</p>
         </div>
       </div>
     );
   }
-  
-  if (ipError) {
+
+  // Require authentication
+  if (!userId) {
     return (
-      <div className="p-6 bg-card rounded-lg shadow-md border border-border">
-        <div className="text-center py-8 text-destructive">
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <p className="text-lg font-medium">Network Information Unavailable</p>
-          <p className="mt-2">This won't affect registration. You can still proceed with device-based verification.</p>
+      <div className="max-w-md mx-auto p-6 bg-card rounded-lg shadow-md border border-border">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-blue-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+            <svg className="w-8 h-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold mb-4 text-blue-700">Authentication Required</h2>
+          <p className="text-sm text-blue-600 mb-6">
+            Please sign in with your Google account to register for the study.
+          </p>
+          <button
+            onClick={() => router.push('/sign-in')}
+            className="w-full py-3 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors font-medium"
+          >
+            Sign In with Google
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Already registered state
+  if (isRegistered && existingParticipant) {
+    return (
+      <div className="max-w-md mx-auto p-6 bg-card rounded-lg shadow-md border border-border">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-green-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+            <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold mb-4 text-green-700">Already Registered</h2>
+          <div className="bg-green-50 p-4 rounded-lg border border-green-200 mb-6">
+            <p className="text-sm text-green-700 mb-2">
+              Welcome back! You're already registered for the study.
+            </p>
+            <p className="font-medium text-green-800">{existingParticipant.fullName}</p>
+            <p className="text-xs text-green-600 mt-2">
+              Status: {existingParticipant.studyStatus} • 
+              Tests completed: {existingParticipant.testsCompleted?.length || 0}
+            </p>
+          </div>
+          <button
+            onClick={() => router.push('/tests')}
+            className="w-full py-3 px-4 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors font-medium"
+          >
+            Continue to Tests
+          </button>
         </div>
       </div>
     );
@@ -136,7 +209,26 @@ export default function RegistrationForm() {
   
   return (
     <div className="max-w-md mx-auto p-6 bg-card rounded-lg shadow-md border border-border">
-      <h2 className="text-2xl font-bold mb-6 text-center">Participant Registration</h2>
+      <h2 className="text-2xl font-bold mb-6 text-center">Complete Your Registration</h2>
+      
+      {/* User Info Display */}
+      {user && (
+        <div className="mb-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="flex items-center mb-2">
+            {user.imageUrl && (
+              <img 
+                src={user.imageUrl} 
+                alt="Profile" 
+                className="w-8 h-8 rounded-full mr-3"
+              />
+            )}
+            <div>
+              <p className="text-sm font-medium text-blue-700">Signed in as</p>
+              <p className="text-xs text-blue-600">{user.primaryEmailAddress?.emailAddress}</p>
+            </div>
+          </div>
+        </div>
+      )}
       
       {error && (
         <div className="mb-6 p-4 bg-destructive/10 text-destructive rounded-md border border-destructive/20">
@@ -144,25 +236,42 @@ export default function RegistrationForm() {
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
             </svg>
-            {error}
+            <span className="text-sm">{error}</span>
           </div>
         </div>
       )}
       
       <form onSubmit={handleSubmit} className="space-y-5">
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium mb-1">
-            Full Name
-          </label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            required
-            className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-          />
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="firstName" className="block text-sm font-medium mb-1">
+              First Name
+            </label>
+            <input
+              type="text"
+              id="firstName"
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleChange}
+              required
+              className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+          
+          <div>
+            <label htmlFor="lastName" className="block text-sm font-medium mb-1">
+              Last Name
+            </label>
+            <input
+              type="text"
+              id="lastName"
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleChange}
+              required
+              className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
         </div>
         
         <div>
@@ -176,8 +285,10 @@ export default function RegistrationForm() {
             value={formData.email}
             onChange={handleChange}
             required
-            className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+            disabled
+            className="w-full px-3 py-2 bg-gray-100 border border-input rounded-md text-gray-600 cursor-not-allowed"
           />
+          <p className="text-xs text-gray-500 mt-1">Email from your Google account</p>
         </div>
         
         <div>
@@ -213,7 +324,7 @@ export default function RegistrationForm() {
             <option value="male">Male</option>
             <option value="female">Female</option>
             <option value="other">Other</option>
-            <option value="prefer not to say">Prefer not to say</option>
+            <option value="prefer-not-to-say">Prefer not to say</option>
           </select>
         </div>
         
@@ -230,9 +341,9 @@ export default function RegistrationForm() {
             className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="">Select education level</option>
-            <option value="high school">High School</option>
-            <option value="bachelor's degree">Bachelor's Degree</option>
-            <option value="master's degree">Master's Degree</option>
+            <option value="high-school">High School</option>
+            <option value="bachelors">Bachelor's Degree</option>
+            <option value="masters">Master's Degree</option>
             <option value="doctorate">PhD/Doctorate</option>
             <option value="other">Other</option>
           </select>
@@ -240,9 +351,11 @@ export default function RegistrationForm() {
         
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || isRegistered}
           className={`w-full py-3 px-4 rounded-md text-primary-foreground font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${
-            loading ? 'bg-primary/70' : 'bg-primary hover:bg-primary/90'
+            loading || isRegistered
+              ? 'bg-primary/40 cursor-not-allowed' 
+              : 'bg-primary hover:bg-primary/90'
           }`}
         >
           {loading ? (
@@ -253,8 +366,17 @@ export default function RegistrationForm() {
               </svg>
               Registering...
             </span>
-          ) : 'Register & Start Tests'}
+          ) : (
+            'Complete Registration & Start Tests'
+          )}
         </button>
+        
+        {/* Information about authentication */}
+        <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+          <p className="text-xs text-gray-600 leading-relaxed">
+            <strong>Secure Authentication:</strong> Your registration is linked to your Google account for secure access and data protection.
+          </p>
+        </div>
       </form>
     </div>
   );
