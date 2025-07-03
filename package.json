@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@fingerprintjs/fingerprintjs": "^4.6.2",
     "@jspsych/plugin-canvas-keyboard-response": "^2.1.0",
     "@jspsych/plugin-html-button-response": "^1.1.2",
     "@jspsych/plugin-html-keyboard-response": "^1.1.2",

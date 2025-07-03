@@ -4,6 +4,180 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 
+// Helper function to format test names
+const formatTestName = (testId) => {
+  const testNames = {
+    'stroopTest': 'Visual Stroop Test',
+    'trailMakingTest': 'Trail Making Test',
+    'corsiBlocksTest': 'Corsi Blocks Test',
+    'fivePointsTest': 'Five Points Test'
+  };
+  return testNames[testId] || testId.replace('Test', ' Test');
+};
+
+// Helper function to format test metrics based on test type
+const formatTestMetrics = (testId, metrics) => {
+  switch (testId) {
+    case 'stroopTest':
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <span className="text-sm font-medium text-gray-600">Total Trials:</span>
+              <span className="text-sm text-gray-800">{metrics.totalTrials || 0}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm font-medium text-gray-600">Correct Trials:</span>
+              <span className="text-sm text-gray-800">{metrics.correctTrials || 0}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm font-medium text-gray-600">Accuracy:</span>
+              <span className="text-sm text-gray-800">{metrics.accuracy || 0}%</span>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <span className="text-sm font-medium text-gray-600">Average RT:</span>
+              <span className="text-sm text-gray-800">{metrics.averageRT || 0}ms</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm font-medium text-gray-600">Congruent RT:</span>
+              <span className="text-sm text-gray-800">{metrics.congruentRT || 0}ms</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm font-medium text-gray-600">Stroop Effect:</span>
+              <span className="text-sm text-gray-800">{metrics.stroopEffect || 0}ms</span>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 'trailMakingTest':
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <h6 className="font-medium text-gray-700 text-sm mb-2">Trial A (Numbers)</h6>
+            <div className="flex justify-between">
+              <span className="text-sm font-medium text-gray-600">Time:</span>
+              <span className="text-sm text-gray-800">{metrics.trialA?.time || 0}s</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm font-medium text-gray-600">Errors:</span>
+              <span className="text-sm text-gray-800">{metrics.trialA?.errors || 0}</span>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <h6 className="font-medium text-gray-700 text-sm mb-2">Trial B (Numbers & Letters)</h6>
+            <div className="flex justify-between">
+              <span className="text-sm font-medium text-gray-600">Time:</span>
+              <span className="text-sm text-gray-800">{metrics.trialB?.time || 0}s</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm font-medium text-gray-600">Errors:</span>
+              <span className="text-sm text-gray-800">{metrics.trialB?.errors || 0}</span>
+            </div>
+          </div>
+          <div className="col-span-1 md:col-span-2 pt-2 border-t">
+            <div className="flex justify-between">
+              <span className="text-sm font-medium text-gray-600">B-A Difference:</span>
+              <span className="text-sm text-gray-800 font-medium">{metrics.bMinusA || 0}s</span>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 'corsiBlocksTest':
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <h6 className="font-medium text-gray-700 text-sm mb-2">Forward Span</h6>
+            <div className="flex justify-between">
+              <span className="text-sm font-medium text-gray-600">Max Span:</span>
+              <span className="text-sm text-gray-800">{metrics.forwardSpan || 0}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm font-medium text-gray-600">Accuracy:</span>
+              <span className="text-sm text-gray-800">{metrics.forwardAccuracy || 0}%</span>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <h6 className="font-medium text-gray-700 text-sm mb-2">Backward Span</h6>
+            <div className="flex justify-between">
+              <span className="text-sm font-medium text-gray-600">Max Span:</span>
+              <span className="text-sm text-gray-800">{metrics.backwardSpan || 0}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm font-medium text-gray-600">Accuracy:</span>
+              <span className="text-sm text-gray-800">{metrics.backwardAccuracy || 0}%</span>
+            </div>
+          </div>
+          <div className="col-span-1 md:col-span-2 pt-2 border-t">
+            <div className="flex justify-between">
+              <span className="text-sm font-medium text-gray-600">Total Span:</span>
+              <span className="text-sm text-gray-800 font-medium">{metrics.totalSpan || 0}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm font-medium text-gray-600">Overall Accuracy:</span>
+              <span className="text-sm text-gray-800 font-medium">{metrics.accuracy || 0}%</span>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 'fivePointsTest':
+      return (
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex justify-between">
+            <span className="text-sm font-medium text-gray-600">New Designs:</span>
+            <span className="text-sm text-gray-800">{metrics.newDesigns || 0}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-sm font-medium text-gray-600">Repetitions:</span>
+            <span className="text-sm text-gray-800">{metrics.repetitions || 0}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-sm font-medium text-gray-600">Mistakes:</span>
+            <span className="text-sm text-gray-800">{metrics.mistakes || 0}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-sm font-medium text-gray-600">Total Designs:</span>
+            <span className="text-sm text-gray-800">{metrics.totalDesigns || 0}</span>
+          </div>
+        </div>
+      );
+
+    default:
+      // Fallback for unknown test types - show all metrics in a clean format
+      return (
+        <div className="space-y-2">
+          {Object.entries(metrics).map(([key, value]) => {
+            let displayValue;
+            if (typeof value === 'number') {
+              displayValue = value.toFixed(2);
+            } else if (typeof value === 'object' && value !== null) {
+              if (Array.isArray(value)) {
+                displayValue = `Array(${value.length})`;
+              } else {
+                displayValue = 'Object';
+              }
+            } else {
+              displayValue = String(value);
+            }
+            
+            return (
+              <div key={key} className="flex justify-between">
+                <span className="text-sm font-medium text-gray-600 capitalize">
+                  {key.replace(/([A-Z])/g, ' $1').trim()}:
+                </span>
+                <span className="text-sm text-gray-800">{displayValue}</span>
+              </div>
+            );
+          })}
+        </div>
+      );
+  }
+};
+
 export default function AdminDashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -327,22 +501,21 @@ export default function AdminDashboard() {
               <div>
                 <h4 className="font-semibold text-gray-700 mb-2">Test Results</h4>
                 {selectedParticipant.testResults && selectedParticipant.testResults.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {selectedParticipant.testResults.map((result, index) => (
-                      <div key={index} className="border rounded p-3">
-                        <h5 className="font-medium text-gray-800 mb-1">
-                          {result.testId.replace('Test', ' Test')}
-                        </h5>
-                        <p className="text-sm text-gray-600 mb-2">
-                          Completed: {new Date(result.completedAt).toLocaleString()}
-                        </p>
+                      <div key={index} className="border rounded-lg p-4 bg-gray-50">
+                        <div className="flex justify-between items-start mb-3">
+                          <h5 className="font-semibold text-gray-800 text-lg">
+                            {formatTestName(result.testId)}
+                          </h5>
+                          <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded">
+                            {new Date(result.completedAt).toLocaleDateString()} at {new Date(result.completedAt).toLocaleTimeString()}
+                          </span>
+                        </div>
+                        
                         {result.metrics && (
-                          <div className="text-xs text-gray-500">
-                            {Object.entries(result.metrics).slice(0, 3).map(([key, value]) => (
-                              <span key={key} className="mr-3">
-                                {key}: {typeof value === 'number' ? value.toFixed(2) : value}
-                              </span>
-                            ))}
+                          <div className="bg-white rounded p-3">
+                            {formatTestMetrics(result.testId, result.metrics)}
                           </div>
                         )}
                       </div>

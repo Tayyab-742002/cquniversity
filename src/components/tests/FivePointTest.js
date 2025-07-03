@@ -17,28 +17,23 @@ export default function FivePointTest({ participantId, showResults = false, prev
   const [feedback, setFeedback] = useState('');
   const [scores, setScores] = useState({ newDesigns: 0, repetitions: 0, mistakes: 0 });
 
-  // Check if participantId is available
-  if (!participantId) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <div className="bg-white rounded-xl shadow-xl p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Access Required</h2>
-          <p className="text-gray-600 mb-6">Please register first to access this test.</p>
-          <button 
-            onClick={() => router.push('/')}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Go to Registration
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // HELPER FUNCTIONS MUST BE DEFINED BEFORE HOOKS THAT USE THEM
+  const formatResults = (results) => {
+    if (!results) return null;
+    
+    // Check if results has metrics field (database structure)
+    const data = results.metrics || results;
+    
+    return {
+      newDesigns: data.newDesigns || 0,
+      repetitions: data.repetitions || 0,
+      mistakes: data.mistakes || 0,
+      totalDesigns: data.totalDesigns || 0,
+      completedAt: results.completedAt || data.completedAt || new Date().toISOString()
+    };
+  };
+
+  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
 
   // Dot positions for the 5-point pattern (in a square formation with center dot)
   const DOT_POSITIONS = [
@@ -180,6 +175,36 @@ export default function FivePointTest({ participantId, showResults = false, prev
       return () => clearTimeout(timer);
     }
   }, [status, drawCanvas]);
+
+  // Effect to handle completion - must be with other hooks
+  useEffect(() => {
+    if (status === 'completed') {
+      saveResults();
+    }
+  }, [status]);
+
+  // Check if participantId is available - AFTER all hooks
+  if (!participantId) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <div className="bg-white rounded-xl shadow-xl p-8 max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Access Required</h2>
+          <p className="text-gray-600 mb-6">Please register first to access this test.</p>
+          <button 
+            onClick={() => router.push('/')}
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Go to Registration
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const isValidPath = (fromId, toId, existingLines) => {
     // Check if we need to use middle dot for diagonal connections
@@ -393,26 +418,7 @@ export default function FivePointTest({ participantId, showResults = false, prev
     }
   };
 
-  const formatResults = (results) => {
-    if (!results) return null;
-    
-    // Check if results has metrics field (database structure)
-    const data = results.metrics || results;
-    
-    return {
-      newDesigns: data.newDesigns || 0,
-      repetitions: data.repetitions || 0,
-      mistakes: data.mistakes || 0,
-      totalDesigns: data.totalDesigns || 0,
-      completedAt: results.completedAt || data.completedAt || new Date().toISOString()
-    };
-  };
 
-  useEffect(() => {
-    if (status === 'completed') {
-      saveResults();
-    }
-  }, [status]);
 
   if (status === 'error') {
     return (

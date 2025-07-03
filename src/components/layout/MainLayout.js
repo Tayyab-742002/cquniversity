@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 
 export default function MainLayout({ children }) {
@@ -6,10 +7,7 @@ export default function MainLayout({ children }) {
       <header className="bg-primary text-primary-foreground py-4 shadow-md">
         <div className="container mx-auto flex justify-between items-center px-4">
           <Link href="/" className="text-xl font-bold flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
-              <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 16a6 6 0 1 1 6-6 6 6 0 0 1-6 6z"></path>
-              <path d="M12 8v4l2.5 2.5"></path>
-            </svg>
+            <Image src="/psycoLogo.png" alt="PsycoTest" width={32} height={32} />
             PsycoTest
           </Link>
           <nav>
@@ -72,8 +70,8 @@ export default function MainLayout({ children }) {
               <p className="text-muted-foreground text-sm">
                 For questions or support, please contact:
                 <br />
-                <a href="mailto:research@psycotest.example.com" className="text-accent hover:underline">
-                  research@psycotest.example.com
+                <a href="mailto:research@psycotest.com" className="text-accent hover:underline">
+                  research@psycotest.com
                 </a>
               </p>
             </div>

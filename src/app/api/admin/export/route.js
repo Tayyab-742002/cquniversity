@@ -22,6 +22,8 @@ function flattenTestResults(participant) {
     age: participant.age,
     gender: participant.gender,
     educationLevel: participant.educationLevel,
+    deviceId: participant.deviceId || '',
+    fingerprintConfidence: participant.fingerprintConfidence || 0,
     ipAddress: participant.ipAddress || '',
     registeredAt: participant.registeredAt ? new Date(participant.registeredAt).toISOString() : ''
   };
@@ -126,6 +128,8 @@ async function exportData() {
       'age',
       'gender',
       'educationLevel',
+      'deviceId',
+      'fingerprintConfidence',
       'ipAddress',
       'registeredAt',
       'testId',

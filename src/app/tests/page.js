@@ -5,12 +5,15 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import MainLayout from '@/components/layout/MainLayout';
 import { getAllTests } from '@/utils/testConfig';
-import { BrainCircuit, LineChart, Boxes, LayoutGrid, CheckCircle } from 'lucide-react';
+import { checkDeviceRestriction } from '@/utils/checkIpRestriction';
+import { BrainCircuit, LineChart, Boxes, LayoutGrid, CheckCircle, Shield, AlertTriangle } from 'lucide-react';
 
 export default function TestsPage() {
   const router = useRouter();
   const [participantId, setParticipantId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [deviceVerified, setDeviceVerified] = useState(false);
   const tests = getAllTests();
   
   // Map test icons to components
@@ -22,17 +25,54 @@ export default function TestsPage() {
   };
 
   useEffect(() => {
-    // Check if user has registered (participantId should be in sessionStorage)
-    const id = sessionStorage.getItem('participantId');
+    const verifyAccess = async () => {
+      setLoading(true);
+      
+      try {
+        // Check if user has registered (participantId should be in sessionStorage)
+        const id = sessionStorage.getItem('participantId');
+        
+        if (!id) {
+          console.log('❌ No participant ID found - redirecting to registration');
+          router.push('/');
+          return;
+        }
+        
+        // Verify device registration status
+        console.log('🔍 Verifying device registration for tests access...');
+        const deviceCheck = await checkDeviceRestriction();
+        
+        if (!deviceCheck.exists) {
+          console.log('❌ Device not registered - redirecting to registration');
+          setError('Your device is not registered. Please register first to access tests.');
+          sessionStorage.removeItem('participantId'); // Clear invalid session
+          setTimeout(() => router.push('/'), 2000);
+          return;
+        }
+        
+        // Verify the stored participant ID matches the device registration
+        if (deviceCheck.participant && deviceCheck.participant.id !== id) {
+          console.log('❌ Participant ID mismatch - redirecting to registration');
+          setError('Session mismatch detected. Please register again.');
+          sessionStorage.removeItem('participantId'); // Clear invalid session
+          setTimeout(() => router.push('/'), 2000);
+          return;
+        }
+        
+        console.log('✅ Device and participant verified - access granted');
+        setParticipantId(id);
+        setDeviceVerified(true);
+        
+      } catch (err) {
+        console.error('Error verifying access:', err);
+        setError('Unable to verify access. Please try again.');
+        setTimeout(() => router.push('/'), 3000);
+      } finally {
+        setLoading(false);
+      }
+    };
     
-    if (!id) {
-      // If no participant ID found, redirect to registration
-      router.push('/');
-      return;
-    }
-    
-    setParticipantId(id);
-    setLoading(false);
+    verifyAccess();
   }, [router]);
 
   if (loading) {
@@ -40,8 +80,28 @@ export default function TestsPage() {
       <MainLayout>
         <div className="flex items-center justify-center h-64">
           <div className="animate-pulse flex flex-col items-center">
-            <div className="w-12 h-12 rounded-full bg-primary/20 mb-4"></div>
-            <p className="text-muted-foreground">Loading...</p>
+            <div className="w-12 h-12 rounded-full bg-primary/20 mb-4 flex items-center justify-center">
+              <Shield className="w-6 h-6 text-primary/60" />
+            </div>
+            <p className="text-muted-foreground">🔍 Verifying access...</p>
+            <p className="text-sm text-muted-foreground mt-2">Checking device registration</p>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center max-w-md">
+            <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="w-8 h-8 text-red-600" />
+            </div>
+            <h2 className="text-xl font-semibold text-gray-800 mb-2">Access Denied</h2>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <p className="text-sm text-gray-500">Redirecting to registration...</p>
           </div>
         </div>
       </MainLayout>

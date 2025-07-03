@@ -22,47 +22,114 @@ export default function StroopTest({
   const [results, setResults] = useState(null);
   const [isClient, setIsClient] = useState(false);
 
+  // HELPER FUNCTIONS MUST BE DEFINED BEFORE HOOKS THAT USE THEM
+  const formatResults = (results) => {
+    console.log("formatResults input:", results);
+
+    if (!results) return null;
+
+    // Handle database structure vs direct test results
+    let testData = results;
+    if (results.rawData) {
+      // This is from database - use rawData
+      testData = results.rawData;
+    } else if (results.metrics) {
+      // This is processed data from database - use metrics directly
+      console.log("Using processed metrics from database:", results.metrics);
+      return {
+        totalTrials: results.metrics.totalTrials || 0,
+        correctTrials: results.metrics.correctTrials || 0,
+        accuracy: results.metrics.accuracy || 0,
+        averageRT: results.metrics.averageRT || 0,
+        congruentRT: results.metrics.congruentRT || 0,
+        incongruentRT: results.metrics.incongruentRT || 0,
+        stroopEffect: results.metrics.stroopEffect || 0,
+        completedAt: results.completedAt || new Date().toISOString(),
+      };
+    }
+
+    const calculateMetrics = (data, condition) => {
+      console.log(`Calculating metrics for ${condition}:`, data);
+      if (!data || data.length === 0)
+        return { accuracy: 0, avgRT: 0, totalTrials: 0, correctTrials: 0 };
+
+      const correctTrials = data.filter((t) => t.correct);
+      const accuracy = Math.round((correctTrials.length / data.length) * 100);
+      const avgRT =
+        correctTrials.length > 0
+          ? Math.round(
+              correctTrials.reduce((sum, t) => sum + t.reaction_time, 0) /
+                correctTrials.length
+            )
+          : 0;
+
+      return {
+        accuracy,
+        avgRT,
+        totalTrials: data.length,
+        correctTrials: correctTrials.length,
+      };
+    };
+
+    const controlMetrics = calculateMetrics(testData.control, "control");
+    const experimentalMetrics = calculateMetrics(
+      testData.experimental,
+      "experimental"
+    );
+
+    // Calculate stroop effect (difference in RT between incongruent and congruent trials)
+    const experimentalData = testData.experimental || [];
+    const congruentTrials = experimentalData.filter(
+      (t) => t.congruent && t.correct
+    );
+    const incongruentTrials = experimentalData.filter(
+      (t) => !t.congruent && t.correct
+    );
+
+    const congruentAvgRT =
+      congruentTrials.length > 0
+        ? congruentTrials.reduce((sum, t) => sum + t.reaction_time, 0) /
+          congruentTrials.length
+        : 0;
+    const incongruentAvgRT =
+      incongruentTrials.length > 0
+        ? incongruentTrials.reduce((sum, t) => sum + t.reaction_time, 0) /
+          incongruentTrials.length
+        : 0;
+
+    const stroopEffect = Math.round(incongruentAvgRT - congruentAvgRT);
+
+    const finalResults = {
+      control: controlMetrics,
+      experimental: experimentalMetrics,
+      stroopEffect,
+      completedAt: testData.completedAt || new Date().toISOString(),
+      // Legacy format for backward compatibility
+      totalTrials: controlMetrics.totalTrials + experimentalMetrics.totalTrials,
+      correctTrials:
+        controlMetrics.correctTrials + experimentalMetrics.correctTrials,
+      accuracy: Math.round(
+        ((controlMetrics.correctTrials + experimentalMetrics.correctTrials) /
+          (controlMetrics.totalTrials + experimentalMetrics.totalTrials)) *
+          100
+      ),
+      averageRT: Math.round(
+        (controlMetrics.avgRT + experimentalMetrics.avgRT) / 2
+      ),
+      congruentRT: Math.round(congruentAvgRT),
+      incongruentRT: Math.round(incongruentAvgRT),
+    };
+
+    console.log("Final formatted results:", finalResults);
+    return finalResults;
+  };
+
+  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
+  
   // Check if we're on the client side
   useEffect(() => {
     setIsClient(true);
   }, []);
-
-  // Check if participantId is available
-  if (!participantId) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <div className="bg-white rounded-xl shadow-xl p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg
-              className="w-8 h-8 text-red-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-              />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">
-            Access Required
-          </h2>
-          <p className="text-gray-600 mb-6">
-            Please register first to access this test.
-          </p>
-          <button
-            onClick={() => router.push("/")}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Go to Registration
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   // Load previous results if available
   useEffect(() => {
@@ -98,7 +165,8 @@ export default function StroopTest({
 
     if (participantId && status === "test") {
       importJsPsychAsync().then(() => {
-        initializeTest();
+        // Use setTimeout to ensure initializeTest is defined
+        setTimeout(() => initializeTest(), 0);
       });
     }
 
@@ -108,6 +176,43 @@ export default function StroopTest({
       }
     };
   }, [isClient, participantId, status]);
+
+  // Check if participantId is available - AFTER all hooks
+  if (!participantId) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <div className="bg-white rounded-xl shadow-xl p-8 max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg
+              className="w-8 h-8 text-red-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+              />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            Access Required
+          </h2>
+          <p className="text-gray-600 mb-6">
+            Please register first to access this test.
+          </p>
+          <button
+            onClick={() => router.push("/")}
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Go to Registration
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Save results to database
   const saveResults = async (allResults) => {
@@ -168,7 +273,7 @@ export default function StroopTest({
       experimentalTrials +
       transitionScreens +
       1;
-
+    
     let currentTrialIndex = 0;
     let controlResults = [];
     let experimentalResults = [];
@@ -539,8 +644,8 @@ export default function StroopTest({
         stimulus: `
             <div class="stroop-container">
               <div class="fixation-cross">+</div>
-            </div>
-          `,
+          </div>
+        `,
         choices: "NO_KEYS",
         trial_duration: 500,
       });
@@ -640,12 +745,12 @@ export default function StroopTest({
 
     practiceExperimentalTrials.forEach((trial, index) => {
       // Fixation
-      timeline.push({
+    timeline.push({
         type: htmlKeyboardResponse,
         stimulus: `
             <div class="stroop-container">
               <div class="fixation-cross">+</div>
-          </div>
+            </div>
         `,
         choices: "NO_KEYS",
         trial_duration: 500,
@@ -663,7 +768,7 @@ export default function StroopTest({
             </div>
           `,
         choices: ["ArrowLeft", "ArrowRight"],
-        data: {
+          data: {
           task: "visual-stroop",
           phase: "practice",
           condition: "experimental",
@@ -732,9 +837,9 @@ export default function StroopTest({
     });
 
     // Control condition start
-    timeline.push({
-      type: htmlButtonResponse,
-      stimulus: `
+      timeline.push({
+        type: htmlButtonResponse,
+        stimulus: `
         <div class="stroop-header">
           <div class="stroop-title">Part 1: Control Condition</div>
           <div class="stroop-subtitle">Arrows will appear in the center of the screen</div>
@@ -742,8 +847,8 @@ export default function StroopTest({
         <div class="stroop-instructions">
           <p style="margin-bottom: 12px; font-weight: 600;">Instructions:</p>
           <p style="margin: 0;">You will see arrows (← or →) appear on the centre of the screen, and your job is to press the left arrow key if the arrow points left and the right arrow key if it points right, focus only on the direction the arrow is pointing, responding as quickly and accurately as possible.</p>
-        </div>
-      `,
+          </div>
+        `,
       choices: ["Begin Control Condition"],
       button_html: '<button class="btn-primary">%choice%</button>',
       data: { phase: "control-start" },
@@ -860,10 +965,10 @@ export default function StroopTest({
         },
       });
     });
-
+    
     // Experimental condition start
     timeline.push({
-      type: htmlButtonResponse,
+        type: htmlButtonResponse,
       stimulus: `
         <div class="stroop-header">
           <div class="stroop-title">Part 2: Experimental Condition</div>
@@ -912,7 +1017,7 @@ export default function StroopTest({
 
     shuffledExperimentalTrials.forEach((trial, index) => {
       // Fixation cross
-      timeline.push({
+    timeline.push({
         type: htmlKeyboardResponse,
         stimulus: `
           <div class="stroop-container">
@@ -924,17 +1029,17 @@ export default function StroopTest({
       });
 
       // Main trial
-      timeline.push({
+    timeline.push({
         type: htmlKeyboardResponse,
-        stimulus: `
+      stimulus: `
           <div class="stroop-container">
             <div class="phase-badge">EXPERIMENTAL</div>
             <div class="trial-counter">Trial ${index + 1}/40</div>
             <div class="arrow-stimulus arrow-${trial.position}">${
           trial.direction === "left" ? "←" : "→"
         }</div>
-          </div>
-        `,
+        </div>
+      `,
         choices: ["ArrowLeft", "ArrowRight"],
         data: {
           task: "visual-stroop",
@@ -1019,7 +1124,7 @@ export default function StroopTest({
 
     // Start the experiment after a brief delay to ensure DOM is ready
     setTimeout(() => {
-      jsPsych.run(timeline);
+    jsPsych.run(timeline);
     }, 100);
   };
 
@@ -1027,116 +1132,8 @@ export default function StroopTest({
     setStatus("test");
   };
 
-  const formatResults = (results) => {
-    console.log("formatResults input:", results);
-
-    if (!results) return null;
-
-    // Handle database structure vs direct test results
-    let testData = results;
-    if (results.rawData) {
-      // This is from database - use rawData
-      testData = results.rawData;
-    } else if (results.metrics) {
-      // This is processed data from database - use metrics directly
-      console.log("Using processed metrics from database:", results.metrics);
-      return {
-        totalTrials: results.metrics.totalTrials || 0,
-        correctTrials: results.metrics.correctTrials || 0,
-        accuracy: results.metrics.accuracy || 0,
-        averageRT: results.metrics.averageRT || 0,
-        congruentRT: results.metrics.congruentRT || 0,
-        incongruentRT: results.metrics.incongruentRT || 0,
-        stroopEffect: results.metrics.stroopEffect || 0,
-        completedAt: results.completedAt || new Date().toISOString(),
-      };
-    }
-
-    // console.log('Processing test data:', testData);
-
-    const calculateMetrics = (data, condition) => {
-      console.log(`Calculating metrics for ${condition}:`, data);
-      if (!data || data.length === 0)
-        return { accuracy: 0, avgRT: 0, totalTrials: 0, correctTrials: 0 };
-
-      const correctTrials = data.filter((t) => t.correct);
-      const accuracy = Math.round((correctTrials.length / data.length) * 100);
-      const avgRT =
-        correctTrials.length > 0
-          ? Math.round(
-              correctTrials.reduce((sum, t) => sum + t.reaction_time, 0) /
-                correctTrials.length
-            )
-          : 0;
-
-      return {
-        accuracy,
-        avgRT,
-        totalTrials: data.length,
-        correctTrials: correctTrials.length,
-      };
-    };
-
-    const controlMetrics = calculateMetrics(testData.control, "control");
-    const experimentalMetrics = calculateMetrics(
-      testData.experimental,
-      "experimental"
-    );
-
-    // console.log('Control metrics:', controlMetrics);
-    // console.log('Experimental metrics:', experimentalMetrics);
-
-    // Calculate stroop effect (difference in RT between incongruent and congruent trials)
-    const experimentalData = testData.experimental || [];
-    const congruentTrials = experimentalData.filter(
-      (t) => t.congruent && t.correct
-    );
-    const incongruentTrials = experimentalData.filter(
-      (t) => !t.congruent && t.correct
-    );
-
-
-
-    const congruentAvgRT =
-      congruentTrials.length > 0
-        ? congruentTrials.reduce((sum, t) => sum + t.reaction_time, 0) /
-          congruentTrials.length
-        : 0;
-    const incongruentAvgRT =
-      incongruentTrials.length > 0
-        ? incongruentTrials.reduce((sum, t) => sum + t.reaction_time, 0) /
-          incongruentTrials.length
-        : 0;
-
-    const stroopEffect = Math.round(incongruentAvgRT - congruentAvgRT);
-
-    const finalResults = {
-      control: controlMetrics,
-      experimental: experimentalMetrics,
-      stroopEffect,
-      completedAt: testData.completedAt || new Date().toISOString(),
-      // Legacy format for backward compatibility
-      totalTrials: controlMetrics.totalTrials + experimentalMetrics.totalTrials,
-      correctTrials:
-        controlMetrics.correctTrials + experimentalMetrics.correctTrials,
-      accuracy: Math.round(
-        ((controlMetrics.correctTrials + experimentalMetrics.correctTrials) /
-          (controlMetrics.totalTrials + experimentalMetrics.totalTrials)) *
-          100
-      ),
-      averageRT: Math.round(
-        (controlMetrics.avgRT + experimentalMetrics.avgRT) / 2
-      ),
-      congruentRT: Math.round(congruentAvgRT),
-      incongruentRT: Math.round(incongruentAvgRT),
-    };
-
-    console.log("Final formatted results:", finalResults);
-    return finalResults;
-  };
-
   if (status === "results" && results) {
-    return (
+  return (
       <div className="flex flex-col items-center justify-center py-12">
         <div className="bg-white rounded-xl shadow-xl p-8 max-w-2xl w-full">
           <div className="text-center mb-8">
@@ -1154,7 +1151,7 @@ export default function StroopTest({
                   d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-            </div>
+          </div>
             <h2 className="text-3xl font-bold text-gray-800 mb-2">
               Test Complete!
             </h2>
@@ -1172,10 +1169,10 @@ export default function StroopTest({
             <div className="text-center p-6 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl border border-blue-200">
               <div className="text-4xl font-bold text-blue-700 mb-1">
                 {results?.totalTrials || 0}
-              </div>
+          </div>
               <div className="text-sm font-medium text-blue-600 uppercase tracking-wide">
                 Total Trials
-              </div>
+        </div>
               <div className="text-xs text-blue-500 mt-1">Trials completed</div>
             </div>
 
@@ -1305,7 +1302,7 @@ export default function StroopTest({
                       strokeWidth={2}
                       d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
-                  </svg>
+            </svg>
                   Instructions
                 </h2>
                 <div className="space-y-4 text-gray-700 leading-relaxed">
@@ -1325,8 +1322,8 @@ export default function StroopTest({
                     Respond as <strong>quickly and accurately</strong> as
                     possible while maintaining high accuracy.
                   </p>
-                </div>
-              </div>
+          </div>
+        </div>
 
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                 <h3 className="font-semibold text-amber-800 mb-3 flex items-center">
@@ -1342,7 +1339,7 @@ export default function StroopTest({
                       strokeWidth={2}
                       d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
                     />
-                  </svg>
+            </svg>
                   Important Rules
                 </h3>
                 <ul className="list-disc list-inside text-amber-700 space-y-2 text-sm">
@@ -1358,7 +1355,7 @@ export default function StroopTest({
                   <li>Respond as quickly and accurately as possible</li>
                   <li>The test includes tutorial and practice trials</li>
                 </ul>
-              </div>
+          </div>
             </div>
 
             <div className="flex flex-col items-center">
@@ -1400,7 +1397,7 @@ export default function StroopTest({
           </div>
 
           <div className="flex justify-center mt-8">
-            <button
+            <button 
               onClick={startTest}
               className="bg-accent cursor-pointer text-white px-10 py-4 rounded-lg text-lg font-semibold hover:from-pink-700 hover:to-red-700 transition-all duration-200 shadow-lg hover:shadow-xl"
             >
@@ -1443,14 +1440,14 @@ export default function StroopTest({
           <p className="text-gray-600 mb-6">
             We encountered an issue. Please try again.
           </p>
-          <button
+            <button 
             onClick={() => setStatus("instructions")}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Try Again
-          </button>
+            >
+              Try Again
+            </button>
         </div>
       )}
     </div>
   );
-}
+} 

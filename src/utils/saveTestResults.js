@@ -165,12 +165,12 @@ function processTrailMakingResults(results) {
     };
   } catch (error) {
     console.error('Error processing Trail Making results:', error);
-    return {
+  return {
       trialA: { time: 0, errors: 0 },
       trialB: { time: 0, errors: 0 },
       bMinusA: 0,
       error: 'Failed to process results'
-    };
+  };
   }
 }
 
@@ -197,7 +197,7 @@ function processCorsiBlocksResults(results) {
     const testTrials = Array.isArray(data) 
       ? data.filter(trial => trial.task === 'corsi' && trial.condition === 'test' && trial.phase === 'response')
       : [];
-      
+    
     return processCorsiSpanResults(testTrials, 'combined');
   } catch (error) {
     console.error('Error processing Corsi Blocks results:', error);
@@ -217,36 +217,36 @@ function processCorsiBlocksResults(results) {
  */
 function processCorsiSpanResults(spanResults, version) {
   if (!Array.isArray(spanResults) || spanResults.length === 0) {
-    return {
-      span: 0,
-      totalCorrect: 0,
+      return {
+        span: 0,
+        totalCorrect: 0,
       totalTrials: 0,
       accuracy: 0,
       spanLevels: {}
-    };
-  }
-
-  // Group trials by span level
-  const trialsBySpan = {};
-  spanResults.forEach(trial => {
-    const span = trial.span;
-    if (!trialsBySpan[span]) {
-      trialsBySpan[span] = [];
+      };
     }
-    trialsBySpan[span].push(trial);
-  });
-
-  // Calculate metrics
-  const spanLevels = Object.keys(trialsBySpan).map(Number).sort((a, b) => a - b);
+    
+  // Group trials by span level
+    const trialsBySpan = {};
+  spanResults.forEach(trial => {
+      const span = trial.span;
+      if (!trialsBySpan[span]) {
+        trialsBySpan[span] = [];
+      }
+      trialsBySpan[span].push(trial);
+    });
+    
+    // Calculate metrics
+    const spanLevels = Object.keys(trialsBySpan).map(Number).sort((a, b) => a - b);
   let maxSpan = 0;
-  let totalCorrect = 0;
+    let totalCorrect = 0;
   let totalTrials = spanResults.length;
   const spanLevelResults = {};
-
+    
   // Calculate performance at each span level
-  spanLevels.forEach(span => {
-    const spanTrials = trialsBySpan[span];
-    const correctTrials = spanTrials.filter(trial => trial.correct).length;
+    spanLevels.forEach(span => {
+      const spanTrials = trialsBySpan[span];
+      const correctTrials = spanTrials.filter(trial => trial.correct).length;
     const spanAccuracy = (correctTrials / spanTrials.length) * 100;
     
     spanLevelResults[span] = {
@@ -254,20 +254,20 @@ function processCorsiSpanResults(spanResults, version) {
       correct: correctTrials,
       accuracy: parseFloat(spanAccuracy.toFixed(2))
     };
-    
-    totalCorrect += correctTrials;
-    
-    // Update max span if at least one trial at this span was correct
-    if (correctTrials > 0) {
+      
+      totalCorrect += correctTrials;
+      
+      // Update max span if at least one trial at this span was correct
+      if (correctTrials > 0) {
       maxSpan = span;
-    }
-  });
+      }
+    });
 
   const overallAccuracy = totalTrials > 0 ? (totalCorrect / totalTrials) * 100 : 0;
-
-  return {
+    
+    return {
     span: maxSpan,
-    totalCorrect,
+      totalCorrect,
     totalTrials,
     accuracy: parseFloat(overallAccuracy.toFixed(2)),
     spanLevels: spanLevelResults

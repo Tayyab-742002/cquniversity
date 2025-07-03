@@ -12,7 +12,7 @@ export async function POST(request) {
     console.log('Received registration data:', requestData);
     
     // Validate required fields (using frontend field names)
-    const requiredFields = ['name', 'email', 'age', 'gender', 'education', 'ipAddress'];
+    const requiredFields = ['name', 'email', 'age', 'gender', 'education', 'deviceId'];
     const missingFields = requiredFields.filter(field => !requestData[field]);
     
     if (missingFields.length > 0) {
@@ -30,7 +30,10 @@ export async function POST(request) {
       age: requestData.age,
       gender: requestData.gender === 'prefer not to say' ? 'prefer-not-to-say' : requestData.gender,
       educationLevel: normalizeEducationLevel(requestData.education),
-      ipAddress: requestData.ipAddress
+      deviceId: requestData.deviceId,
+      deviceFingerprint: requestData.deviceFingerprint || {},
+      fingerprintConfidence: requestData.confidence || 0,
+      ipAddress: requestData.ipAddress || 'unknown'
     };
     
     console.log('Mapped participant data:', participantData);
@@ -57,14 +60,18 @@ export async function POST(request) {
       return educationMap[normalized] || normalized.replace(/\s+/g, '-');
     }
     
-    // Check if participant with this IP already exists
+    // Check if participant with this device ID already exists
     const existingParticipant = await Participant.findOne({ 
-      ipAddress: participantData.ipAddress 
+      deviceId: participantData.deviceId 
     });
     
     if (existingParticipant) {
+      console.log('Device already registered:', {
+        deviceId: participantData.deviceId.substring(0, 8) + '...',
+        existingParticipant: existingParticipant.name
+      });
       return NextResponse.json(
-        { error: 'A participant with this IP address has already registered' },
+        { error: 'This device has already been used for registration' },
         { status: 409 }  // Conflict status code
       );
     }

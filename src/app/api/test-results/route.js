@@ -283,23 +283,63 @@ function processCorsiBlocksResults(results) {
   try {
     console.log('Processing Corsi Blocks results:', results);
     
-    // Handle the new structure with metrics already calculated
+    // Handle the new structure with metrics already calculated (from the test component)
     if (results.metrics) {
       console.log('Found pre-calculated metrics:', results.metrics);
       return {
-        span: results.metrics.span || 0,
+        forwardSpan: results.metrics.forwardSpan || 0,
+        backwardSpan: results.metrics.backwardSpan || 0,
+        totalSpan: results.metrics.totalSpan || 0,
         accuracy: results.metrics.accuracy || 0,
+        forwardAccuracy: results.metrics.forwardAccuracy || 0,
+        backwardAccuracy: results.metrics.backwardAccuracy || 0,
         totalTrials: results.metrics.totalTrials || 0,
-        completedAt: results.completedAt
+        completedAt: results.completedAt || new Date().toISOString()
       };
     }
     
-    // Handle the structure with forward and backward results
-    if (results.forward && results.backward) {
+    // Handle the structure with forwardTrials and backwardTrials
+    if (results.forwardTrials && results.backwardTrials) {
+      console.log('Processing forwardTrials and backwardTrials');
+      
+      const forwardTrials = results.forwardTrials || [];
+      const backwardTrials = results.backwardTrials || [];
+      
+      // Calculate forward span (highest span achieved)
+      let forwardSpan = 0;
+      forwardTrials.forEach(trial => {
+        if (trial.correct) {
+          forwardSpan = Math.max(forwardSpan, trial.span);
+        }
+      });
+      
+      // Calculate backward span (highest span achieved)
+      let backwardSpan = 0;
+      backwardTrials.forEach(trial => {
+        if (trial.correct) {
+          backwardSpan = Math.max(backwardSpan, trial.span);
+        }
+      });
+      
+      const totalTrials = forwardTrials.length + backwardTrials.length;
+      const totalCorrect = forwardTrials.filter(trial => trial.correct).length + 
+                          backwardTrials.filter(trial => trial.correct).length;
+      const accuracy = totalTrials > 0 ? Math.round((totalCorrect / totalTrials) * 100) : 0;
+      
+      const forwardAccuracy = forwardTrials.length > 0 ? 
+        Math.round((forwardTrials.filter(trial => trial.correct).length / forwardTrials.length) * 100) : 0;
+      const backwardAccuracy = backwardTrials.length > 0 ? 
+        Math.round((backwardTrials.filter(trial => trial.correct).length / backwardTrials.length) * 100) : 0;
+      
       return {
-        forward: processCorsiSpanResults(results.forward, 'forward'),
-        backward: processCorsiSpanResults(results.backward, 'backward'),
-        completedAt: results.completedAt
+        forwardSpan: forwardSpan,
+        backwardSpan: backwardSpan,
+        totalSpan: forwardSpan + backwardSpan,
+        accuracy: accuracy,
+        forwardAccuracy: forwardAccuracy,
+        backwardAccuracy: backwardAccuracy,
+        totalTrials: totalTrials,
+        completedAt: results.completedAt || new Date().toISOString()
       };
     }
     
@@ -314,17 +354,26 @@ function processCorsiBlocksResults(results) {
     }
     
     // Default fallback
+    console.log('Using default fallback for Corsi results');
     return {
-      span: 0,
+      forwardSpan: 0,
+      backwardSpan: 0,
+      totalSpan: 0,
       accuracy: 0,
+      forwardAccuracy: 0,
+      backwardAccuracy: 0,
       totalTrials: 0,
       completedAt: results.completedAt || new Date().toISOString()
     };
   } catch (error) {
     console.error('Error processing Corsi Blocks results:', error);
     return {
-      span: 0,
+      forwardSpan: 0,
+      backwardSpan: 0,
+      totalSpan: 0,
       accuracy: 0,
+      forwardAccuracy: 0,
+      backwardAccuracy: 0,
       totalTrials: 0,
       error: 'Failed to process results'
     };
@@ -339,9 +388,9 @@ function processCorsiBlocksResults(results) {
  */
 function processCorsiSpanResults(spanResults, version) {
   if (!Array.isArray(spanResults) || spanResults.length === 0) {
-    return {
-      span: 0,
-      totalCorrect: 0,
+  return {
+    span: 0,
+    totalCorrect: 0,
       totalTrials: 0,
       accuracy: 0,
       spanLevels: {}
@@ -407,7 +456,7 @@ function processFivePointsResults(results) {
     
     // Handle the Five Points test data structure
     if (results && typeof results === 'object') {
-      return {
+  return {
         newDesigns: results.newDesigns || 0,
         repetitions: results.repetitions || 0,
         mistakes: results.mistakes || 0,

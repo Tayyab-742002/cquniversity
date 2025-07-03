@@ -56,6 +56,21 @@ const participantSchema = new mongoose.Schema({
     required: [true, 'Education level is required'],
     enum: ['high-school', 'bachelors', 'masters', 'doctorate', 'other']
   },
+  deviceId: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  deviceFingerprint: {
+    type: mongoose.Schema.Types.Mixed,
+    required: false,
+    default: {}
+  },
+  fingerprintConfidence: {
+    type: Number,
+    required: false,
+    default: 0
+  },
   ipAddress: {
     type: String,
     required: false

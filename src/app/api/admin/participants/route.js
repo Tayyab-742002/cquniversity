@@ -22,6 +22,8 @@ async function getParticipants() {
         age: participant.age,
         gender: participant.gender,
         educationLevel: participant.educationLevel,
+        deviceId: participant.deviceId ? participant.deviceId.substring(0, 8) + '...' : 'unknown',
+        fingerprintConfidence: participant.fingerprintConfidence || 0,
         ipAddress: participant.ipAddress,
         registeredAt: participant.registeredAt,
         completedTests,
