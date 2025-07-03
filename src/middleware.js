@@ -11,7 +11,7 @@ const isProtectedRoute = createRouteMatcher([
   '/api/debug/test-results(.*)',
   '/api/debug/migrate-schema(.*)'
 ]);
-
+    
 // Define public debug routes that don't need auth
 const isPublicDebugRoute = createRouteMatcher([
   '/api/debug/db-status(.*)'
@@ -22,7 +22,7 @@ export default clerkMiddleware(async (auth, req) => {
   // Skip protection for public debug routes
   if (isProtectedRoute(req) && !isPublicDebugRoute(req)) {
     await auth.protect();
-  }
+}
   // All other routes (including /, /about, /sign-in, /sign-up) are public
 });
 

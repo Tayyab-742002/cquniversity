@@ -49,9 +49,9 @@ export default function TestsPage() {
         if (!data.registered) {
           setError('Please complete your registration before accessing tests.');
           setTimeout(() => router.push('/'), 2000);
-          return;
-        }
-        
+      return;
+    }
+    
         // Check if study progress needs to be synced
         const participant = data.participant;
         const testResultsCount = participant.testResults?.length || 0;
@@ -90,7 +90,7 @@ export default function TestsPage() {
           setParticipantData(participant);
         }
         
-        setLoading(false);
+    setLoading(false);
         
       } catch (err) {
         console.error('❌ Registration check error:', err);
@@ -113,7 +113,7 @@ export default function TestsPage() {
 
   if (!isLoaded || loading) {
     return (
-      <MainLayout>
+   
         <div className="flex items-center justify-center h-64">
           <div className="animate-pulse flex flex-col items-center">
             <div className="w-12 h-12 rounded-full bg-primary/20 mb-4 flex items-center justify-center">
@@ -123,13 +123,13 @@ export default function TestsPage() {
             <p className="text-sm text-muted-foreground mt-2">Checking your study participation status</p>
           </div>
         </div>
-      </MainLayout>
+     
     );
   }
 
   if (error) {
     return (
-      <MainLayout>
+     
         <div className="flex items-center justify-center h-64">
           <div className="text-center max-w-md">
             <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
@@ -140,12 +140,12 @@ export default function TestsPage() {
             <p className="text-sm text-gray-500">Redirecting...</p>
           </div>
         </div>
-      </MainLayout>
+      
     );
   }
 
   return (
-    <MainLayout>
+   
       <div className="max-w-6xl mx-auto py-8 px-4">
         {/* Welcome Header */}
         <div className="text-center mb-8">
@@ -230,7 +230,7 @@ export default function TestsPage() {
                         {isCompleted ? (
                           <CheckCircle className="h-6 w-6 text-green-600" />
                         ) : (
-                          <IconComponent className={`h-6 w-6 ${test.implemented ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <IconComponent className={`h-6 w-6 ${test.implemented ? 'text-primary' : 'text-muted-foreground'}`} />
                         )}
                       </div>
                       <div>
@@ -303,6 +303,6 @@ export default function TestsPage() {
           </button>
         </div>
       </div>
-    </MainLayout>
+    
   );
 } 
