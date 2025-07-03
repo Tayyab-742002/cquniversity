@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useIpAddress } from '@/hooks/useIpAddress';
-import { checkIpRestriction } from '@/utils/checkIpRestriction';
+import { checkDeviceRestriction } from '@/utils/checkIpRestriction';
+import { generateDeviceFingerprint } from '@/utils/deviceFingerprint';
 import axios from 'axios';
 
 export default function RegistrationForm() {
@@ -19,35 +20,50 @@ export default function RegistrationForm() {
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [checkingIp, setCheckingIp] = useState(false);
+  const [checkingDevice, setCheckingDevice] = useState(true);
+  const [deviceData, setDeviceData] = useState(null);
   
-  // Check IP restriction when IP address is available
+  // Check device restriction on component mount
   useEffect(() => {
     const checkRestriction = async () => {
-      if (ipAddress) {
-        setCheckingIp(true);
-        try {
-          const result = await checkIpRestriction(ipAddress);
-          if (result.exists) {
-            setError('You have already registered. Each participant can only register once.');
-            
-            // If the participant has already started tests, redirect them to the tests page
-            if (result.participant) {
-              sessionStorage.setItem('participantId', result.participant.id);
+      setCheckingDevice(true);
+      try {
+        console.log('🔍 Checking device registration status...');
+        const result = await checkDeviceRestriction();
+        
+        if (result.exists) {
+          setError(`This device has already been registered by ${result.participant.name}. Each device can only be used for one registration.`);
+          
+          // If the participant has already started tests, redirect them to the tests page
+          if (result.participant) {
+            sessionStorage.setItem('participantId', result.participant.id);
+            setTimeout(() => {
               router.push('/tests');
-            }
+            }, 2000); // Give user time to read the message
           }
-        } catch (err) {
-          console.error('IP restriction check error:', err);
-          // Don't show error to user, just let them continue
-        } finally {
-          setCheckingIp(false);
+        } else {
+          // Store device data for registration
+          setDeviceData(result.deviceData);
+          console.log('✅ Device not registered - ready for new registration');
         }
+      } catch (err) {
+        console.error('Device restriction check error:', err);
+        // Generate fallback device data if checking fails
+        try {
+          const fallbackData = await generateDeviceFingerprint();
+          setDeviceData(fallbackData);
+          console.log('⚠️ Using fallback device fingerprint');
+        } catch (fallbackErr) {
+          console.error('Fallback fingerprint generation failed:', fallbackErr);
+          setError('Unable to verify device. Please refresh the page and try again.');
+        }
+      } finally {
+        setCheckingDevice(false);
       }
     };
     
     checkRestriction();
-  }, [ipAddress, router]);
+  }, [router]);
   
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -57,8 +73,8 @@ export default function RegistrationForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (ipLoading || !ipAddress) {
-      setError('Unable to determine your IP address. Please try again later.');
+    if (!deviceData) {
+      setError('Device verification in progress. Please wait a moment and try again.');
       return;
     }
     
@@ -66,13 +82,19 @@ export default function RegistrationForm() {
     setError(null);
     
     try {
-      // If IP is new, proceed with registration
+      console.log('📝 Submitting registration with device data...');
+      
+      // Proceed with registration using device fingerprint
       const response = await axios.post('/api/participants', {
         ...formData,
-        ipAddress
+        deviceId: deviceData.deviceId,
+        deviceFingerprint: deviceData.fingerprint,
+        confidence: deviceData.confidence,
+        ipAddress: ipAddress || 'unknown'
       });
       
       if (response.data.success) {
+        console.log('✅ Registration successful!');
         // Store participant ID in session storage for test tracking
         sessionStorage.setItem('participantId', response.data.participant.id);
         // Redirect to tests page or dashboard
@@ -86,12 +108,13 @@ export default function RegistrationForm() {
     }
   };
   
-  if (ipLoading || checkingIp) {
+  if (checkingDevice) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-pulse flex flex-col items-center">
           <div className="w-12 h-12 rounded-full bg-primary/20 mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
+          <p className="text-muted-foreground">🔍 Verifying device...</p>
+          <p className="text-sm text-muted-foreground mt-2">Generating device fingerprint for security</p>
         </div>
       </div>
     );
@@ -104,8 +127,8 @@ export default function RegistrationForm() {
           <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <p className="text-lg font-medium">Error: Unable to determine your IP address.</p>
-          <p className="mt-2">Please refresh the page or try again later.</p>
+          <p className="text-lg font-medium">Network Information Unavailable</p>
+          <p className="mt-2">This won't affect registration. You can still proceed with device-based verification.</p>
         </div>
       </div>
     );
@@ -208,9 +231,9 @@ export default function RegistrationForm() {
           >
             <option value="">Select education level</option>
             <option value="high school">High School</option>
-            <option value="bachelor">Bachelor's Degree</option>
-            <option value="master">Master's Degree</option>
-            <option value="phd">PhD</option>
+            <option value="bachelor's degree">Bachelor's Degree</option>
+            <option value="master's degree">Master's Degree</option>
+            <option value="doctorate">PhD/Doctorate</option>
             <option value="other">Other</option>
           </select>
         </div>

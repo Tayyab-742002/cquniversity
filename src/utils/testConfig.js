@@ -25,7 +25,7 @@ const tests = [
     path: '/tests/trail-making',
     status: 'active',
     icon: 'LineChart',
-    implemented: false
+    implemented: true
   },
   {
     id: 'corsiBlocksTest',
@@ -37,19 +37,19 @@ const tests = [
     path: '/tests/corsi-blocks',
     status: 'active',
     icon: 'Boxes',
-    implemented: false
+    implemented: true
   },
   {
     id: 'fivePointsTest',
     name: 'Five-Points Test',
     description: 'A test of figural fluency and executive function.',
-    instructions: 'You will be presented with a grid of dots. Your task is to create as many unique designs as possible by connecting the dots with straight lines within a time limit.',
+    instructions: 'You will be presented with squares containing five dots each. Your task is to create as many unique designs as possible by connecting the dots with straight lines within a 3-minute time limit.',
     duration: '3-5 minutes',
     difficulty: 'Medium',
     path: '/tests/five-points',
     status: 'active',
     icon: 'LayoutGrid',
-    implemented: false
+    implemented: true
   }
 ];
 
@@ -107,19 +107,30 @@ export function getTestResultSchema(testId) {
     },
     trailMakingTest: {
       metrics: [
-        { name: 'timePartA', label: 'Time (Part A)', description: 'Time to complete Part A', format: 'time_s' },
-        { name: 'timePartB', label: 'Time (Part B)', description: 'Time to complete Part B', format: 'time_s' },
-        { name: 'errorsPartA', label: 'Errors (Part A)', description: 'Number of errors in Part A' },
-        { name: 'errorsPartB', label: 'Errors (Part B)', description: 'Number of errors in Part B' },
+        { name: 'partA', label: 'Part A', description: 'Results for Part A (connecting numbers)', nested: true, children: [
+          { name: 'time', label: 'Time', description: 'Time to complete Part A in seconds', format: 'time_s' },
+          { name: 'errors', label: 'Errors', description: 'Number of errors in Part A', format: 'count' }
+        ]},
+        { name: 'partB', label: 'Part B', description: 'Results for Part B (connecting numbers and letters)', nested: true, children: [
+          { name: 'time', label: 'Time', description: 'Time to complete Part B in seconds', format: 'time_s' },
+          { name: 'errors', label: 'Errors', description: 'Number of errors in Part B', format: 'count' }
+        ]},
         { name: 'bMinusA', label: 'B-A Difference', description: 'Difference between Part B and Part A times', format: 'time_s' }
       ],
       visualization: 'lineChart'
     },
     corsiBlocksTest: {
       metrics: [
-        { name: 'span', label: 'Corsi Span', description: 'Maximum sequence length correctly recalled' },
-        { name: 'totalCorrect', label: 'Total Correct', description: 'Total number of correctly recalled sequences' },
-        { name: 'totalScore', label: 'Total Score', description: 'Weighted score based on sequence length and accuracy' }
+        { name: 'forward', label: 'Forward Span', description: 'Forward span performance', nested: true, children: [
+          { name: 'span', label: 'Max Span', description: 'Maximum sequence length correctly recalled in forward order' },
+          { name: 'totalCorrect', label: 'Correct Trials', description: 'Number of correctly recalled sequences' },
+          { name: 'accuracy', label: 'Accuracy', description: 'Percentage of correct responses', format: 'percentage' }
+        ]},
+        { name: 'backward', label: 'Backward Span', description: 'Backward span performance', nested: true, children: [
+          { name: 'span', label: 'Max Span', description: 'Maximum sequence length correctly recalled in reverse order' },
+          { name: 'totalCorrect', label: 'Correct Trials', description: 'Number of correctly recalled sequences' },
+          { name: 'accuracy', label: 'Accuracy', description: 'Percentage of correct responses', format: 'percentage' }
+        ]}
       ],
       visualization: 'barChart'
     },

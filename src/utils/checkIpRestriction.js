@@ -1,20 +1,36 @@
 import axios from 'axios';
+import { generateDeviceFingerprint } from './deviceFingerprint';
 
 /**
- * Checks if a participant with the given IP address has already registered
- * @param {string} ipAddress - The IP address to check
- * @returns {Promise<Object>} - Promise resolving to { exists: boolean, participant: Object|null }
+ * Check if a device is already registered (device fingerprint based)
+ * @returns {Promise<Object>} Object containing restriction status and participant info
  */
-export async function checkIpRestriction(ipAddress) {
+export async function checkDeviceRestriction() {
   try {
-    if (!ipAddress) {
-      throw new Error('IP address is required');
-    }
+    // Generate device fingerprint
+    const deviceData = await generateDeviceFingerprint();
     
-    const response = await axios.post('/api/check-ip', { ipAddress });
-    return response.data;
+    const response = await axios.post('/api/check-device', { 
+      deviceId: deviceData.deviceId,
+      deviceFingerprint: deviceData.fingerprint,
+      confidence: deviceData.confidence
+    });
+
+    return {
+      ...response.data,
+      deviceData
+    };
   } catch (error) {
-    console.error('Error checking IP restriction:', error);
+    console.error('Error checking device restriction:', error);
     throw error;
   }
+}
+
+/**
+ * Legacy function for backward compatibility
+ * @deprecated Use checkDeviceRestriction instead
+ */
+export async function checkIpRestriction(ipAddress) {
+  console.warn('checkIpRestriction is deprecated. Use checkDeviceRestriction instead.');
+  return checkDeviceRestriction();
 } 

@@ -1,3 +1,69 @@
+# Environment Variables
+
+This file contains the required environment variables for the PsycoTest application.
+
+## Required Variables
+
+### Database Configuration
+```bash
+MONGODB_URI=mongodb://localhost:27017/psycotest
+# Or for MongoDB Atlas:
+# MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/psycotest
+```
+
+### Admin Dashboard Security (Production)
+```bash
+# Secure admin token - CHANGE THIS IN PRODUCTION!
+ADMIN_TOKEN=your-super-secure-admin-token-here-2024
+
+# Optional: Restrict admin access to specific IP addresses (comma-separated)
+ADMIN_IPS=192.168.1.100,203.0.113.10,10.0.0.5
+
+# Example production setup:
+# ADMIN_TOKEN=Adm1n_Psyc0T3st_2024_Secure_Token_x9K7mP3qR8
+# ADMIN_IPS=203.0.113.10,198.51.100.20
+```
+
+### Application Configuration
+```bash
+NODE_ENV=production
+# or NODE_ENV=development for local development
+```
+
+## Admin Dashboard Access
+
+### Development (Default)
+- **Path**: `/sys-analytics-db7f9e2a`
+- **Token**: `psyco-admin-secure-2024-x9k7m`
+- **IP Restriction**: Disabled
+
+### Production Setup
+1. **Change the admin token** in your environment variables
+2. **Set ADMIN_IPS** if you want IP restrictions
+3. **Use HTTPS** in production
+4. **Monitor access logs** for security
+
+### Security Features
+- **Unpredictable path**: `/sys-analytics-db7f9e2a` (hard to guess)
+- **Token-based authentication**: Secure token required
+- **Optional IP whitelisting**: Restrict to specific IPs
+- **Session management**: Token stored in browser session
+- **Secure headers**: Authorization header validation
+
+## Example .env.local file
+```bash
+MONGODB_URI=mongodb://localhost:27017/psycotest
+ADMIN_TOKEN=your-secure-admin-token-2024
+ADMIN_IPS=192.168.1.100,10.0.0.5
+NODE_ENV=development
+```
+
+## Notes
+- Never commit the `.env.local` file to version control
+- Use strong, unique tokens in production
+- Consider using environment variable management services for production
+- The admin token should be at least 32 characters long with mixed case, numbers, and symbols
+
 # Required Environment Variables for PsycoTest
 
 Create a `.env.local` file in the root directory of your project with the following variables:
