@@ -159,9 +159,9 @@ export default function StroopTest({
 
   const initializeTest = () => {
     // Test parameters - following exact specification
-    const controlTrials = 20; // 10 left + 10 right
-    const experimentalTrials = 40; // 4 conditions × 10 trials each
-    const practiceTrials = 4; // 2 control + 2 experimental practice
+    const controlTrials = 20; // 5 left + 5 right + 5 up + 5 down
+    const experimentalTrials = 40; // 10 trials each for 4 directions
+    const practiceTrials = 8; // 4 control + 4 experimental practice
 
     // Calculate total trials including tutorials
     const tutorialScreens = 6;
@@ -250,6 +250,20 @@ export default function StroopTest({
       .arrow-right {
         position: absolute;
         right: 100px;
+      }
+      
+      .arrow-up {
+        position: absolute;
+        top: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      
+      .arrow-down {
+        position: absolute;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%);
       }
       
       .arrow-center {
@@ -538,6 +552,8 @@ export default function StroopTest({
     const practiceControlTrials = [
       { direction: "left", position: "center" },
       { direction: "right", position: "center" },
+      { direction: "up", position: "center" },
+      { direction: "down", position: "center" },
     ];
 
     practiceControlTrials.forEach((trial, index) => {
@@ -560,11 +576,13 @@ export default function StroopTest({
             <div class="stroop-container">
               <div class="phase-badge">PRACTICE</div>
               <div class="arrow-stimulus arrow-${trial.position}">${
-          trial.direction === "left" ? "←" : "→"
+          trial.direction === "left" ? "←" : 
+          trial.direction === "right" ? "→" :
+          trial.direction === "up" ? "↑" : "↓"
         }</div>
             </div>
           `,
-        choices: ["ArrowLeft", "ArrowRight"],
+        choices: ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"],
         data: {
           task: "visual-stroop",
           phase: "practice",
@@ -581,6 +599,10 @@ export default function StroopTest({
             correctKey = "ArrowLeft";
           } else if (trial.direction === "right") {
             correctKey = "ArrowRight";
+          } else if (trial.direction === "up") {
+            correctKey = "ArrowUp";
+          } else if (trial.direction === "down") {
+            correctKey = "ArrowDown";
           }
 
           // Check different possible response formats
@@ -598,6 +620,16 @@ export default function StroopTest({
           ) {
             isCorrect = true;
           } else if (
+            data.response === "arrowup" &&
+            trial.direction === "up"
+          ) {
+            isCorrect = true;
+          } else if (
+            data.response === "arrowdown" &&
+            trial.direction === "down"
+          ) {
+            isCorrect = true;
+          } else if (
             data.response === "ArrowLeft" &&
             trial.direction === "left"
           ) {
@@ -607,17 +639,39 @@ export default function StroopTest({
             trial.direction === "right"
           ) {
             isCorrect = true;
+          } else if (
+            data.response === "ArrowUp" &&
+            trial.direction === "up"
+          ) {
+            isCorrect = true;
+          } else if (
+            data.response === "ArrowDown" &&
+            trial.direction === "down"
+          ) {
+            isCorrect = true;
           } else if (data.response === 0 && trial.direction === "left") {
             // Index 0 = ArrowLeft
             isCorrect = true;
           } else if (data.response === 1 && trial.direction === "right") {
             // Index 1 = ArrowRight
             isCorrect = true;
+          } else if (data.response === 2 && trial.direction === "up") {
+            // Index 2 = ArrowUp
+            isCorrect = true;
+          } else if (data.response === 3 && trial.direction === "down") {
+            // Index 3 = ArrowDown
+            isCorrect = true;
           } else if (data.response === "0" && trial.direction === "left") {
             // String index 0 = ArrowLeft
             isCorrect = true;
           } else if (data.response === "1" && trial.direction === "right") {
             // String index 1 = ArrowRight
+            isCorrect = true;
+          } else if (data.response === "2" && trial.direction === "up") {
+            // String index 2 = ArrowUp
+            isCorrect = true;
+          } else if (data.response === "3" && trial.direction === "down") {
+            // String index 3 = ArrowDown
             isCorrect = true;
           }
 
@@ -633,6 +687,8 @@ export default function StroopTest({
     const practiceExperimentalTrials = [
       { direction: "right", position: "right", congruent: true },
       { direction: "left", position: "left", congruent: true },
+      { direction: "up", position: "up", congruent: true },
+      { direction: "down", position: "down", congruent: true },
     ];
 
     practiceExperimentalTrials.forEach((trial, index) => {
@@ -655,11 +711,13 @@ export default function StroopTest({
             <div class="stroop-container">
               <div class="phase-badge">PRACTICE</div>
               <div class="arrow-stimulus arrow-${trial.position}">${
-          trial.direction === "left" ? "←" : "→"
+          trial.direction === "left" ? "←" : 
+          trial.direction === "right" ? "→" :
+          trial.direction === "up" ? "↑" : "↓"
         }</div>
             </div>
           `,
-        choices: ["ArrowLeft", "ArrowRight"],
+        choices: ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"],
           data: {
           task: "visual-stroop",
           phase: "practice",
@@ -677,6 +735,10 @@ export default function StroopTest({
             correctKey = "ArrowLeft";
           } else if (trial.direction === "right") {
             correctKey = "ArrowRight";
+          } else if (trial.direction === "up") {
+            correctKey = "ArrowUp";
+          } else if (trial.direction === "down") {
+            correctKey = "ArrowDown";
           }
 
           // Check different possible response formats
@@ -694,6 +756,16 @@ export default function StroopTest({
           ) {
             isCorrect = true;
           } else if (
+            data.response === "arrowup" &&
+            trial.direction === "up"
+          ) {
+            isCorrect = true;
+          } else if (
+            data.response === "arrowdown" &&
+            trial.direction === "down"
+          ) {
+            isCorrect = true;
+          } else if (
             data.response === "ArrowLeft" &&
             trial.direction === "left"
           ) {
@@ -703,17 +775,39 @@ export default function StroopTest({
             trial.direction === "right"
           ) {
             isCorrect = true;
+          } else if (
+            data.response === "ArrowUp" &&
+            trial.direction === "up"
+          ) {
+            isCorrect = true;
+          } else if (
+            data.response === "ArrowDown" &&
+            trial.direction === "down"
+          ) {
+            isCorrect = true;
           } else if (data.response === 0 && trial.direction === "left") {
             // Index 0 = ArrowLeft
             isCorrect = true;
           } else if (data.response === 1 && trial.direction === "right") {
             // Index 1 = ArrowRight
             isCorrect = true;
+          } else if (data.response === 2 && trial.direction === "up") {
+            // Index 2 = ArrowUp
+            isCorrect = true;
+          } else if (data.response === 3 && trial.direction === "down") {
+            // Index 3 = ArrowDown
+            isCorrect = true;
           } else if (data.response === "0" && trial.direction === "left") {
             // String index 0 = ArrowLeft
             isCorrect = true;
           } else if (data.response === "1" && trial.direction === "right") {
             // String index 1 = ArrowRight
+            isCorrect = true;
+          } else if (data.response === "2" && trial.direction === "up") {
+            // String index 2 = ArrowUp
+            isCorrect = true;
+          } else if (data.response === "3" && trial.direction === "down") {
+            // String index 3 = ArrowDown
             isCorrect = true;
           }
 
@@ -741,11 +835,13 @@ export default function StroopTest({
       data: { phase: "control-start" },
     });
 
-    // Generate control trials - exactly 20 trials (10 left, 10 right)
+    // Generate control trials - exactly 20 trials (5 each direction)
     const controlTrialsList = [];
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 5; i++) {
       controlTrialsList.push({ direction: "left", position: "center" });
       controlTrialsList.push({ direction: "right", position: "center" });
+      controlTrialsList.push({ direction: "up", position: "center" });
+      controlTrialsList.push({ direction: "down", position: "center" });
     }
 
     // Shuffle trials
@@ -773,11 +869,13 @@ export default function StroopTest({
             <div class="phase-badge">CONTROL</div>
             <div class="trial-counter">Trial ${index + 1}/20</div>
             <div class="arrow-stimulus arrow-${trial.position}">${
-          trial.direction === "left" ? "←" : "→"
+          trial.direction === "left" ? "←" : 
+          trial.direction === "right" ? "→" :
+          trial.direction === "up" ? "↑" : "↓"
         }</div>
           </div>
         `,
-        choices: ["ArrowLeft", "ArrowRight"],
+        choices: ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"],
         data: {
           task: "visual-stroop",
           phase: "response",
@@ -795,6 +893,10 @@ export default function StroopTest({
             correctKey = "ArrowLeft";
           } else if (trial.direction === "right") {
             correctKey = "ArrowRight";
+          } else if (trial.direction === "up") {
+            correctKey = "ArrowUp";
+          } else if (trial.direction === "down") {
+            correctKey = "ArrowDown";
           }
 
           // Check different possible response formats
@@ -812,6 +914,16 @@ export default function StroopTest({
           ) {
             isCorrect = true;
           } else if (
+            data.response === "arrowup" &&
+            trial.direction === "up"
+          ) {
+            isCorrect = true;
+          } else if (
+            data.response === "arrowdown" &&
+            trial.direction === "down"
+          ) {
+            isCorrect = true;
+          } else if (
             data.response === "ArrowLeft" &&
             trial.direction === "left"
           ) {
@@ -821,17 +933,39 @@ export default function StroopTest({
             trial.direction === "right"
           ) {
             isCorrect = true;
+          } else if (
+            data.response === "ArrowUp" &&
+            trial.direction === "up"
+          ) {
+            isCorrect = true;
+          } else if (
+            data.response === "ArrowDown" &&
+            trial.direction === "down"
+          ) {
+            isCorrect = true;
           } else if (data.response === 0 && trial.direction === "left") {
             // Index 0 = ArrowLeft
             isCorrect = true;
           } else if (data.response === 1 && trial.direction === "right") {
             // Index 1 = ArrowRight
             isCorrect = true;
+          } else if (data.response === 2 && trial.direction === "up") {
+            // Index 2 = ArrowUp
+            isCorrect = true;
+          } else if (data.response === 3 && trial.direction === "down") {
+            // Index 3 = ArrowDown
+            isCorrect = true;
           } else if (data.response === "0" && trial.direction === "left") {
             // String index 0 = ArrowLeft
             isCorrect = true;
           } else if (data.response === "1" && trial.direction === "right") {
             // String index 1 = ArrowRight
+            isCorrect = true;
+          } else if (data.response === "2" && trial.direction === "up") {
+            // String index 2 = ArrowUp
+            isCorrect = true;
+          } else if (data.response === "3" && trial.direction === "down") {
+            // String index 3 = ArrowDown
             isCorrect = true;
           }
 
@@ -861,29 +995,33 @@ export default function StroopTest({
       data: { phase: "experimental-start" },
     });
 
-    // Generate experimental trials - exactly 40 trials as specified
+    // Generate experimental trials - exactly 40 trials (10 each direction)
     const experimentalTrialsList = [];
 
     for (let i = 0; i < 10; i++) {
-      experimentalTrialsList.push({
-        direction: "right",
-        position: "right",
-        congruent: true,
-      });
-      experimentalTrialsList.push({
-        direction: "left",
-        position: "left",
-        congruent: true,
-      });
-      experimentalTrialsList.push({
-        direction: "right",
-        position: "left",
-        congruent: false,
-      });
+      // Each direction gets 10 trials with mixed positions
+      const positions = ["left", "right", "up", "down"];
+      
+      // Add one trial for each direction
       experimentalTrialsList.push({
         direction: "left",
-        position: "right",
-        congruent: false,
+        position: positions[i % 4],
+        congruent: (i % 4) === 1, // congruent when position is "left"
+      });
+      experimentalTrialsList.push({
+        direction: "right",
+        position: positions[i % 4],
+        congruent: (i % 4) === 0, // congruent when position is "right" 
+      });
+      experimentalTrialsList.push({
+        direction: "up",
+        position: positions[i % 4],
+        congruent: (i % 4) === 2, // congruent when position is "up"
+      });
+      experimentalTrialsList.push({
+        direction: "down",
+        position: positions[i % 4],
+        congruent: (i % 4) === 3, // congruent when position is "down"
       });
     }
 
@@ -913,11 +1051,13 @@ export default function StroopTest({
             <div class="phase-badge">EXPERIMENTAL</div>
             <div class="trial-counter">Trial ${index + 1}/40</div>
             <div class="arrow-stimulus arrow-${trial.position}">${
-          trial.direction === "left" ? "←" : "→"
+          trial.direction === "left" ? "←" : 
+          trial.direction === "right" ? "→" :
+          trial.direction === "up" ? "↑" : "↓"
         }</div>
         </div>
       `,
-        choices: ["ArrowLeft", "ArrowRight"],
+        choices: ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"],
         data: {
           task: "visual-stroop",
           phase: "response",
@@ -935,6 +1075,10 @@ export default function StroopTest({
             correctKey = "ArrowLeft";
           } else if (trial.direction === "right") {
             correctKey = "ArrowRight";
+          } else if (trial.direction === "up") {
+            correctKey = "ArrowUp";
+          } else if (trial.direction === "down") {
+            correctKey = "ArrowDown";
           }
 
           // Check different possible response formats
@@ -952,6 +1096,16 @@ export default function StroopTest({
           ) {
             isCorrect = true;
           } else if (
+            data.response === "arrowup" &&
+            trial.direction === "up"
+          ) {
+            isCorrect = true;
+          } else if (
+            data.response === "arrowdown" &&
+            trial.direction === "down"
+          ) {
+            isCorrect = true;
+          } else if (
             data.response === "ArrowLeft" &&
             trial.direction === "left"
           ) {
@@ -961,17 +1115,39 @@ export default function StroopTest({
             trial.direction === "right"
           ) {
             isCorrect = true;
+          } else if (
+            data.response === "ArrowUp" &&
+            trial.direction === "up"
+          ) {
+            isCorrect = true;
+          } else if (
+            data.response === "ArrowDown" &&
+            trial.direction === "down"
+          ) {
+            isCorrect = true;
           } else if (data.response === 0 && trial.direction === "left") {
             // Index 0 = ArrowLeft
             isCorrect = true;
           } else if (data.response === 1 && trial.direction === "right") {
             // Index 1 = ArrowRight
             isCorrect = true;
+          } else if (data.response === 2 && trial.direction === "up") {
+            // Index 2 = ArrowUp
+            isCorrect = true;
+          } else if (data.response === 3 && trial.direction === "down") {
+            // Index 3 = ArrowDown
+            isCorrect = true;
           } else if (data.response === "0" && trial.direction === "left") {
             // String index 0 = ArrowLeft
             isCorrect = true;
           } else if (data.response === "1" && trial.direction === "right") {
             // String index 1 = ArrowRight
+            isCorrect = true;
+          } else if (data.response === "2" && trial.direction === "up") {
+            // String index 2 = ArrowUp
+            isCorrect = true;
+          } else if (data.response === "3" && trial.direction === "down") {
+            // String index 3 = ArrowDown
             isCorrect = true;
           }
 
@@ -1055,15 +1231,15 @@ export default function StroopTest({
                 <div className="space-y-4 text-gray-700 leading-relaxed">
                   <p>
                     You will see <strong>arrows</strong> appearing on your
-                    screen pointing either left ← or right →. Your task is to
+                    screen pointing left ←, right →, up ↑, or down ↓. Your task is to
                     respond to the <strong>direction the arrow points</strong>,
                     regardless of where it appears.
                   </p>
                   <p>
-                    Use the <strong>left arrow key</strong> for arrows pointing
-                    left and the <strong>right arrow key</strong>
-                    for arrows pointing right. The test has two phases with
-                    different arrow positions.
+                    Use the <strong>arrow keys</strong> to respond:
+                    left arrow key for left ←, right arrow key for right →,
+                    up arrow key for up ↑, and down arrow key for down ↓.
+                    The test has two phases with different arrow positions.
                   </p>
                   <p>
                     Respond as <strong>quickly and accurately</strong> as
@@ -1098,7 +1274,7 @@ export default function StroopTest({
                     Ignore the <strong>position</strong> where the arrow appears
                     on screen
                   </li>
-                  <li>Use keyboard arrow keys: ← for left, → for right</li>
+                  <li>Use keyboard arrow keys: ← for left, → for right, ↑ for up, ↓ for down</li>
                   <li>Respond as quickly and accurately as possible</li>
                   <li>The test includes tutorial and practice trials</li>
                 </ul>
@@ -1128,7 +1304,7 @@ export default function StroopTest({
                       Experimental Condition
                     </div>
                     <div className="text-xs mt-1">
-                      Arrows appear on left or right side
+                      Arrows appear in different positions (left, right, up, down)
                     </div>
                   </div>
                 </div>
