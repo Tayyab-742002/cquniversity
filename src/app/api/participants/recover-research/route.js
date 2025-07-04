@@ -18,7 +18,7 @@ export async function POST(request) {
     const body = await request.json();
     const { participantCode, email } = body;
 
-    console.log('🔄 Attempting to recover research participant:', { userId, participantCode, email });
+  
 
     // Validate required fields
     if (!participantCode || !email) {
@@ -48,7 +48,7 @@ export async function POST(request) {
     });
 
     if (existingParticipant) {
-      console.log('⚠️ Participant already exists:', existingParticipant._id);
+     
       return NextResponse.json({
         success: true,
         recovered: false,
@@ -81,16 +81,12 @@ export async function POST(request) {
       studyStatus: 'registered'
     };
 
-    console.log('📝 Creating recovered participant record:', participantData);
+
 
     const participant = new Participant(participantData);
     const savedParticipant = await participant.save();
 
-    console.log('✅ Successfully recovered participant:', {
-      id: savedParticipant._id,
-      email: savedParticipant.email,
-      participantCode: savedParticipant.participantCode
-    });
+
 
     return NextResponse.json({
       success: true,

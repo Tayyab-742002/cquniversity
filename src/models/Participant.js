@@ -33,7 +33,7 @@ const participantSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
-    index: true
+   
   },
   
   // Research participant code (for research participants only)
@@ -43,7 +43,7 @@ const participantSchema = new mongoose.Schema({
     trim: true,
     uppercase: true,
     match: [/^[A-Z0-9]{8}$/, 'Participant code must be exactly 8 alphanumeric characters'],
-    index: true
+    
   },
   
   // User type (general or research)
@@ -51,7 +51,7 @@ const participantSchema = new mongoose.Schema({
     type: String,
     enum: ['general', 'research'],
     default: 'general',
-    index: true
+   
   },
   
   // User profile information

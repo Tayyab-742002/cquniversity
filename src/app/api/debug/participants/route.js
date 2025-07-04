@@ -9,7 +9,7 @@ import Participant from '@/models/Participant';
 export async function GET(request) {
   try {
     await connectToDatabase();
-
+    
     // Get all participants (limit to prevent overwhelming response)
     const participants = await Participant.find({}, {
       firstName: 1,
@@ -25,7 +25,7 @@ export async function GET(request) {
     participants.forEach(p => {
       console.log(`- ${p.fullName} (${p.email}) - Code: ${p.participantCode || 'N/A'} - Type: ${p.userType} - Status: ${p.studyStatus}`);
     });
-
+    
     return NextResponse.json({
       success: true,
       count: participants.length,

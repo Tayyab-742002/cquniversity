@@ -60,8 +60,7 @@ export default function RegistrationForm() {
         setIsResearchParticipant(true);
         setParticipantCode(data.participant.participantCode || '');
         setExistingParticipant(data.participant);
-        
-        console.log('📋 Found existing research participant:', data.participant);
+
         
         // Pre-fill form if participant has temporary data
         if (data.participant.firstName === 'Research' && data.participant.lastName === 'Participant') {
@@ -147,18 +146,18 @@ export default function RegistrationForm() {
       if (isResearchParticipant && participantCode) {
         registrationData.userType = 'research';
         registrationData.participantCode = participantCode;
-        console.log('📝 Updating research participant profile with code:', participantCode);
+     
       } else {
         registrationData.userType = 'general';
-        console.log('📝 Registering general participant');
+    
       }
       
-      console.log('🚀 Sending registration data:', registrationData);
+     
       
       // Use PUT only for research participants who are updating their temporary profiles
       // Use POST for all new registrations (including Google users)
       const method = (needsProfileCompletion && isResearchParticipant) ? 'PUT' : 'POST';
-      console.log(`📋 Using ${method} method - needsProfileCompletion: ${needsProfileCompletion}, isResearchParticipant: ${isResearchParticipant}`);
+    
       
       const response = await fetch('/api/participants', {
         method: method,
@@ -167,7 +166,7 @@ export default function RegistrationForm() {
       });
       
       const data = await response.json();
-      console.log('📥 Registration response:', data);
+
       
       if (response.ok && data.success) {
         // Store participant ID for easy access
@@ -176,7 +175,7 @@ export default function RegistrationForm() {
         // Clean up completion flags
         sessionStorage.removeItem('needsProfileCompletion');
         
-        console.log('✅ Registration/update successful, redirecting to tests');
+       
         
         // Redirect to tests page
         router.push('/tests');
@@ -195,7 +194,7 @@ export default function RegistrationForm() {
         setError('This participant code is already in use.');
       } else if (err.message.includes('PARTICIPANT_NOT_FOUND')) {
         // If PUT failed because participant not found, try POST instead
-        console.log('⚠️ PUT failed, participant not found. Retrying with POST...');
+     
         setNeedsProfileCompletion(false);
         // Retry the form submission
         setTimeout(() => handleSubmit(e), 100);

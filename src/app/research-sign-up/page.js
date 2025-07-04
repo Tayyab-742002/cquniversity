@@ -84,7 +84,7 @@ export default function ResearchSignUpPage() {
         const participantCode = localStorage.getItem('researchParticipantCode')
         const participantEmail = localStorage.getItem('researchParticipantEmail')
         
-        console.log('🔍 Retrieved participant data:', { participantCode, participantEmail })
+   
 
         // Immediately create the participant record in our database
         if (participantCode && participantEmail) {
@@ -103,7 +103,7 @@ export default function ResearchSignUpPage() {
               googleId: null
             }
 
-            console.log('📝 Creating participant record:', participantData)
+   
 
             const response = await fetch('/api/participants', {
               method: 'POST',
@@ -112,11 +112,10 @@ export default function ResearchSignUpPage() {
             })
 
             const data = await response.json()
-            console.log('📥 Participant creation response:', data)
+           
 
             if (response.ok && data.success) {
-              console.log('✅ Research participant created successfully')
-              
+ 
               // Clean up localStorage
               localStorage.removeItem('researchParticipantCode')
               localStorage.removeItem('researchParticipantEmail')

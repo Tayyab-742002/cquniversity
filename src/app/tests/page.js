@@ -58,7 +58,7 @@ export default function TestsPage() {
         
         // If there are test results but testsCompleted doesn't match, sync progress
         if (testResultsCount > 0 && testResultsCount !== testsCompletedCount) {
-          console.log('🔄 Syncing study progress with existing test results...');
+         
           try {
             const syncResponse = await fetch('/api/participants/sync-progress', {
               method: 'POST',
@@ -67,8 +67,7 @@ export default function TestsPage() {
             
             if (syncResponse.ok) {
               const syncData = await syncResponse.json();
-              console.log('✅ Study progress synced:', syncData.participant);
-              
+
               // Update participant data with synced progress
               const updatedData = { ...data };
               updatedData.participant = {

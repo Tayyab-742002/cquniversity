@@ -32,11 +32,7 @@ export async function GET(request) {
       userType: 'research'
     });
 
-    console.log('🔍 Verifying research participant:', { 
-      email: email.toLowerCase(), 
-      participantCode: participantCode.toUpperCase(),
-      found: !!participant 
-    });
+
 
     if (participant) {
       return NextResponse.json({
