@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth, useUser, useClerk } from '@clerk/nextjs';
 import Link from 'next/link';
-import MainLayout from '@/components/layout/MainLayout';
 import SyncProgressButton from '@/components/SyncProgressButton';
 import { getAllTests } from '@/utils/testConfig';
 import { BrainCircuit, LineChart, Boxes, LayoutGrid, CheckCircle, Shield, AlertTriangle, User, LogOut } from 'lucide-react';

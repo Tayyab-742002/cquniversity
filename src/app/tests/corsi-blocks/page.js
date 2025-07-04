@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth, useUser } from '@clerk/nextjs';
-import MainLayout from '@/components/layout/MainLayout';
+
 import CorsiBlocksTest from '@/components/tests/CorsiBlocksTest';
 import { checkPreviousTestResult } from '@/utils/saveTestResults';
 import axios from 'axios';
@@ -83,7 +83,7 @@ export default function CorsiBlocksTestPage() {
 
   if (loading) {
     return (
-      <MainLayout>
+      
         <div className="flex items-center justify-center h-64">
           <div className="animate-pulse flex flex-col items-center">
             <div className="w-12 h-12 rounded-full bg-primary/20 mb-4">
@@ -95,12 +95,12 @@ export default function CorsiBlocksTestPage() {
             <p className="text-muted-foreground">Loading test...</p>
           </div>
         </div>
-      </MainLayout>
+      
     );
   }
 
   return (
-    <MainLayout>
+    
       <CorsiBlocksTest 
         participantId={participantData?.id}
         showResults={showResults}
@@ -108,6 +108,6 @@ export default function CorsiBlocksTestPage() {
         onRetake={handleRetakeTest}
         onTestComplete={handleTestComplete}
       />
-    </MainLayout>
+    
   );
 } 
