@@ -1,0 +1,11 @@
+dmin Dashboard Access Instructions
+To access the admin dashboard:
+Go to: https://psycotest.vercel.app/admin
+Enter this access token: 9Wd5ZqCDX9V0iwRfSBq3%vrBEHk0wkjLSKHPlvUsCri0dhR1WlZ
+Click "Access Dashboard"
+Note: You'll need to enter the token each time you visit (no auto-login for security).
+From the dashboard you can:
+View participant statistics and demographics
+See individual test results
+Export all data as CSV files
+Monitor real-time participant activity

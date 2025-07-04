@@ -30,14 +30,15 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex  justify-center p-4">
       <div className="max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-8">
-        <div className="w-16 h-16  rounded-xl mx-auto mb-4 flex items-center justify-center">
-            <Image src="/psycoLogo.png" alt="PsycoTest Logo" width={64} height={64} />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome to PsycoTest</h1>
+        <div className="mx-auto mb-8 flex items-center justify-center">
+            <Image src="/logo.png" alt="CQUniversity" width={64} height={64} className="rounded-lg" />
+           <Image src="/logotext.png" alt="CQUniversity" width={150} height={20} className="rounded-lg" />
+           </div>
+          
           <p className="text-gray-600">Sign in with your Google account to continue</p>
         </div>
 

@@ -1,29 +1,44 @@
-import { Inter } from 'next/font/google'
-import { ClerkProvider } from '@clerk/nextjs'
-import './globals.css'
-import MainLayout from '@/components/layout/MainLayout'
+import { Inter } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
+import "./globals.css";
+import MainLayout from "@/components/layout/MainLayout";
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: 'PsycoTest - Cognitive Assessment Platform',
-  description: 'A comprehensive cognitive testing platform for psychological research',
-  keywords: 'psychology, cognitive testing, research, assessment, neuroscience',
-  authors: [{ name: 'PsycoTest Team' }],
-}
+  title: "CQUniversity - Cognitive Assessment Platform",
+  description:
+    "A comprehensive cognitive testing platform for psychological research",
+  keywords: "psychology, cognitive testing, research, assessment, neuroscience",
+  authors: [{ name: "CQUniversity Team" }],
+};
 
 export default function RootLayout({ children }) {
   return (
     <ClerkProvider>
-    <html lang="en">
+      <html lang="en">
+        <head>
+          <link
+            rel="icon"
+            type="image/png"
+            href="/favicon-96x96.png"
+            sizes="96x96"
+          />
+          <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+          <link rel="shortcut icon" href="/favicon.ico" />
+          <link
+            rel="apple-touch-icon"
+            sizes="180x180"
+            href="/apple-touch-icon.png"
+          />
+          <link rel="manifest" href="/site.webmanifest" />
+        </head>
         <body className={inter.className}>
           <div className="min-h-screen bg-background">
-       <MainLayout>
-        {children}
-       </MainLayout>
+            <MainLayout>{children}</MainLayout>
           </div>
-      </body>
-    </html>
+        </body>
+      </html>
     </ClerkProvider>
-  )
+  );
 }
