@@ -33,14 +33,14 @@ export async function POST(request) {
       // Format participants data
       const formattedParticipants = participants.map(participant => ({
         id: participant._id.toString(),
-        name: participant.name,
+        name: participant.firstName + " " + participant.lastName,
         email: participant.email,
         age: participant.age,
         gender: participant.gender,
         education: participant.education,
         studyStatus: participant.studyStatus,
         testsCompleted: participant.testsCompleted?.length || 0,
-        registeredAt: participant.registeredAt
+        registeredAt: participant.createdAt
       }));
 
       return NextResponse.json({
@@ -97,11 +97,10 @@ export async function POST(request) {
           { status: 404 }
         );
       }
-
       // Format participant data with complete information
       const formattedParticipant = {
         id: participant._id.toString(),
-        name: participant.name,
+        name: participant.firstName + " " + participant.lastName,
         email: participant.email,
         age: participant.age,
         gender: participant.gender,
@@ -109,7 +108,7 @@ export async function POST(request) {
         studyStatus: participant.studyStatus,
         testsCompleted: participant.testsCompleted || [],
         testResults: participant.testResults || [],
-        registeredAt: participant.registeredAt,
+        registeredAt: participant.createdAt,
         // Include any additional fields that might be useful
         ...participant
       };
