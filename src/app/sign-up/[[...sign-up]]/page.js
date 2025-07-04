@@ -30,24 +30,20 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex  justify-center p-4">
       <div className="max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16  rounded-xl mx-auto mb-4 flex items-center justify-center">
-            <Image src="/psycoLogo.png" alt="PsycoTest Logo" width={64} height={64} />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Join PsycoTest</h1>
+          <div className="mx-auto mb-8 flex items-center justify-center">
+            <Image src="/logo.png" alt="CQUniversity" width={64} height={64} className="rounded-lg" />
+           <Image src="/logotext.png" alt="CQUniversity" width={150} height={20} className="rounded-lg" />
+           </div>
+          
           <p className="text-gray-600">Create your account to participate in cognitive research</p>
         </div>
 
         {/* Custom Sign Up Form */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Create your account</h2>
-            <p className="text-gray-600">Get started with your cognitive research journey</p>
-          </div>
-
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-center">

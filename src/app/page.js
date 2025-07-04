@@ -60,12 +60,10 @@ export default function Home() {
       <div className="max-w-4xl mx-auto px-4 py-16">
         {/* Header */}
         <div className="text-center mb-16">
-          <div className="w-16 h-16 mx-auto mb-8">
-            <Image src="/psycoLogo.png" alt="PsycoTest" width={64} height={64} className="rounded-lg" />
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            PsycoTest
-          </h1>
+          <div className="mx-auto mb-8 flex items-center justify-center">
+            <Image src="/logo.png" alt="CQUniversity" width={64} height={64} className="rounded-lg" />
+           <Image src="/logotext.png" alt="CQUniversity" width={150} height={20} className="rounded-lg" />
+           </div>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Participate in psychological research through cognitive assessments
           </p>

@@ -223,10 +223,8 @@ export default function TrailMakingTest({ participantId, showResults = false, pr
       // Color based on state
       if (index < currentNodeRef.current) {
         ctx.fillStyle = '#22c55e'; // Green for completed
-      } else if (index === currentNodeRef.current) {
-        ctx.fillStyle = '#3b82f6'; // Blue for current target
       } else {
-        ctx.fillStyle = '#f1f5f9'; // Light gray for remaining
+        ctx.fillStyle = '#f1f5f9'; // Light gray for all remaining (including current target)
       }
       
       ctx.fill();
