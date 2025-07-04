@@ -558,7 +558,7 @@ export default function StroopTest({
 
     practiceControlTrials.forEach((trial, index) => {
       // Fixation
-      timeline.push({
+    timeline.push({
         type: htmlKeyboardResponse,
         stimulus: `
             <div class="stroop-container">
@@ -580,8 +580,8 @@ export default function StroopTest({
           trial.direction === "right" ? "→" :
           trial.direction === "up" ? "↑" : "↓"
         }</div>
-            </div>
-          `,
+          </div>
+        `,
         choices: ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"],
         data: {
           task: "visual-stroop",
@@ -693,7 +693,7 @@ export default function StroopTest({
 
     practiceExperimentalTrials.forEach((trial, index) => {
       // Fixation
-    timeline.push({
+      timeline.push({
         type: htmlKeyboardResponse,
         stimulus: `
             <div class="stroop-container">
@@ -818,13 +818,13 @@ export default function StroopTest({
     });
 
     // Control condition start
-      timeline.push({
-        type: htmlButtonResponse,
+    timeline.push({
+      type: htmlButtonResponse,
         stimulus: `
         <div class="stroop-header">
           <div class="stroop-title">Part 1: Control Condition</div>
           <div class="stroop-subtitle">Arrows will appear in the center of the screen</div>
-        </div>
+            </div>
         <div class="stroop-instructions">
           <p style="margin-bottom: 12px; font-weight: 600;">Instructions:</p>
           <p style="margin: 0;">You will see arrows (← or →) appear on the centre of the screen, and your job is to press the left arrow key if the arrow points left and the right arrow key if it points right, focus only on the direction the arrow is pointing, responding as quickly and accurately as possible.</p>
@@ -876,7 +876,7 @@ export default function StroopTest({
           </div>
         `,
         choices: ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"],
-        data: {
+          data: {
           task: "visual-stroop",
           phase: "response",
           condition: "control",
@@ -978,9 +978,9 @@ export default function StroopTest({
     });
     
     // Experimental condition start
-    timeline.push({
+      timeline.push({
         type: htmlButtonResponse,
-      stimulus: `
+        stimulus: `
         <div class="stroop-header">
           <div class="stroop-title">Part 2: Experimental Condition</div>
           <div class="stroop-subtitle">Arrows will appear on the left or right side of the screen</div>
@@ -988,8 +988,8 @@ export default function StroopTest({
         <div class="stroop-instructions">
           <p style="margin-bottom: 12px; font-weight: 600;">Instructions:</p>
           <p style="margin: 0;">Now, you will see arrows (← or →) appear on either the left or right side of the screen, and your job is to press the left arrow key if the arrow points left and the right arrow key if it points right, <span class="tutorial-highlight">regardless of where the arrow appears</span>; focus only on the direction the arrow is pointing and ignore its position, responding as quickly and accurately as possible.</p>
-        </div>
-      `,
+          </div>
+        `,
       choices: ["Begin Experimental Condition"],
       button_html: '<button class="btn-accent">%choice%</button>',
       data: { phase: "experimental-start" },

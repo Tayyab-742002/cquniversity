@@ -36,6 +36,24 @@ const participantSchema = new mongoose.Schema({
     index: true
   },
   
+  // Research participant code (for research participants only)
+  participantCode: {
+    type: String,
+    required: false,
+    trim: true,
+    uppercase: true,
+    match: [/^[A-Z0-9]{8}$/, 'Participant code must be exactly 8 alphanumeric characters'],
+    index: true
+  },
+  
+  // User type (general or research)
+  userType: {
+    type: String,
+    enum: ['general', 'research'],
+    default: 'general',
+    index: true
+  },
+  
   // User profile information
   firstName: {
     type: String,
@@ -118,6 +136,8 @@ const participantSchema = new mongoose.Schema({
 // Indexes for performance
 participantSchema.index({ clerkId: 1 });
 participantSchema.index({ email: 1 }, { unique: true });
+participantSchema.index({ participantCode: 1 });
+participantSchema.index({ userType: 1 });
 participantSchema.index({ googleId: 1 });
 participantSchema.index({ createdAt: -1 });
 participantSchema.index({ studyStatus: 1 });

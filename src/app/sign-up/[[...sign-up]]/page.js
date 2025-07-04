@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 
 export default function SignUpPage() {
-  const { isLoaded, signUp, setActive } = useSignUp()
+  const { isLoaded, signUp } = useSignUp()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
@@ -30,20 +30,25 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex  justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex justify-center p-4">
       <div className="max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="mx-auto mb-8 flex items-center justify-center">
             <Image src="/logo.png" alt="CQUniversity" width={64} height={64} className="rounded-lg" />
-           <Image src="/logotext.png" alt="CQUniversity" width={150} height={20} className="rounded-lg" />
-           </div>
+            <Image src="/logotext.png" alt="CQUniversity" width={150} height={20} className="rounded-lg" />
+          </div>
           
-          <p className="text-gray-600">Create your account to participate in cognitive research</p>
+          <p className="text-gray-600">Create your account with Google to get started</p>
         </div>
 
         {/* Custom Sign Up Form */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Create Account</h2>
+            <p className="text-gray-600">Join us and start your cognitive assessment journey</p>
+          </div>
+
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-center">
@@ -91,8 +96,6 @@ export default function SignUpPage() {
               </a>
             </p>
           </div>
-
-     
         </div>
 
         {/* Information Box */}
@@ -102,15 +105,13 @@ export default function SignUpPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div>
-              <h3 className="text-sm font-medium text-blue-800 mb-1">About This Study</h3>
+              <h3 className="text-sm font-medium text-blue-800 mb-1">About psycotest</h3>
               <p className="text-sm text-blue-700">
-                You'll complete cognitive assessments including reaction time tests, memory tasks, and attention challenges. All data is anonymized and used for research purposes only.
+                Complete cognitive assessments including reaction time tests, memory tasks, and attention challenges. All data is anonymized and used for research purposes only.
               </p>
             </div>
           </div>
         </div>
-
-
       </div>
     </div>
   )

@@ -6,37 +6,44 @@ import Participant from '@/models/Participant';
  * Debug API endpoint to list all participants with test results
  * @returns {Promise<NextResponse>} Response with participants data
  */
-export async function GET() {
+export async function GET(request) {
   try {
-    // Connect to database
     await connectToDatabase();
-    
-    // Find all participants
-    const participants = await Participant.find({});
-    
-    // Map participants to a sanitized format
-    const sanitizedParticipants = participants.map(participant => {
-      const hasTestResults = participant.testResults && participant.testResults.length > 0;
-      
-      return {
-        id: participant._id,
-        name: participant.name.charAt(0) + '***', // Only show first letter
-        email: participant.email.split('@')[0].charAt(0) + '***@' + participant.email.split('@')[1], // Hide most of email
-        registeredAt: participant.registeredAt,
-        hasTestResults,
-        testResultsCount: hasTestResults ? participant.testResults.length : 0,
-        testIds: hasTestResults ? participant.testResults.map(result => result.testId) : []
-      };
+
+    // Get all participants (limit to prevent overwhelming response)
+    const participants = await Participant.find({}, {
+      firstName: 1,
+      lastName: 1,
+      email: 1,
+      participantCode: 1,
+      userType: 1,
+      studyStatus: 1,
+      createdAt: 1
+    }).limit(20).sort({ createdAt: -1 });
+
+    console.log('📋 All participants in database:');
+    participants.forEach(p => {
+      console.log(`- ${p.fullName} (${p.email}) - Code: ${p.participantCode || 'N/A'} - Type: ${p.userType} - Status: ${p.studyStatus}`);
     });
-    
+
     return NextResponse.json({
-      count: sanitizedParticipants.length,
-      participants: sanitizedParticipants
+      success: true,
+      count: participants.length,
+      participants: participants.map(p => ({
+        id: p._id,
+        fullName: p.fullName,
+        email: p.email,
+        participantCode: p.participantCode,
+        userType: p.userType,
+        studyStatus: p.studyStatus,
+        createdAt: p.createdAt
+      }))
     });
+
   } catch (error) {
-    console.error('Error in debug participants route:', error);
+    console.error('❌ Debug participants error:', error);
     return NextResponse.json(
-      { error: 'Failed to get participants: ' + error.message },
+      { error: 'Failed to fetch participants', details: error.message },
       { status: 500 }
     );
   }

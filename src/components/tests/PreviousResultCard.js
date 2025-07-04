@@ -138,13 +138,13 @@ export default function PreviousResultCard({
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <button
+            {/* <button
               onClick={onRetake}
               className="flex items-center justify-center px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
             >
               <RotateCcw className="w-4 h-4 mr-2" />
               Retake Test
-            </button>
+            </button> */}
             <button
               onClick={() => router.push('/tests')}
               className="flex items-center justify-center px-6 py-3 bg-muted text-muted-foreground rounded-lg hover:bg-muted/80 transition-colors font-medium"
@@ -156,11 +156,11 @@ export default function PreviousResultCard({
         </div>
 
         {/* Additional Info */}
-        <div className="bg-muted/30 px-6 py-4 border-t border-border">
+        {/* <div className="bg-muted/30 px-6 py-4 border-t border-border">
           <p className="text-sm text-muted-foreground text-center">
             You can retake this test at any time. Your previous results will be saved and you can compare your performance.
           </p>
-        </div>
+        </div> */}
       </div>
     </div>
   );

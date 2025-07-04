@@ -295,7 +295,7 @@ export default function TestsPage() {
           </p>
           <button
             onClick={handleSignOut}
-            className="inline-flex items-center text-sm text-red-600 hover:text-red-800 transition-colors px-3 py-2 rounded-md hover:bg-red-50"
+            className="inline-flex items-center cursor-pointer text-sm text-red-600 hover:text-red-800 transition-colors px-3 py-2 rounded-md hover:bg-red-50"
           >
             <LogOut className="w-4 h-4 mr-2" />
             Sign Out

@@ -137,6 +137,30 @@ export default function Home() {
                       Sign In
                     </Link>
                   </div>
+
+                  {/* Research Participant Section */}
+                  <div className="mt-8 pt-6 border-t border-gray-200">
+                    <div className="text-center space-y-4">
+                      <div>
+                        <h4 className="text-sm font-semibold text-blue-900 mb-1">Research Participants</h4>
+                        <p className="text-xs text-blue-700">
+                          CQUniversity research study participants
+                        </p>
+                      </div>
+                      <Link 
+                        href="/research-sign-up" 
+                        className="block w-full bg-blue-500 text-white font-medium py-2.5 px-4 rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                      >
+                        Research Participant Sign Up
+                      </Link>
+                      <div className="text-xs text-blue-600">
+                        Already registered?{' '}
+                        <Link href="/research-sign-in" className="underline hover:text-blue-500">
+                          Sign in here
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </SignedOut>
               
