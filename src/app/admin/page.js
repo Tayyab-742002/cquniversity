@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Users,CheckCheck, User, Clock  } from "lucide-react";
+import { Users,CheckCheck, User, Clock, Download, Filter } from "lucide-react";
 export default function AdminDashboard() {
   const [token, setToken] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -10,6 +10,8 @@ export default function AdminDashboard() {
   const [dashboardData, setDashboardData] = useState(null);
   const [selectedParticipant, setSelectedParticipant] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [participantFilter, setParticipantFilter] = useState("all"); // all, research, public
+  const [isExporting, setIsExporting] = useState(false);
 
   // Always start logged out - no auto-login
   useEffect(() => {
@@ -71,18 +73,25 @@ export default function AdminDashboard() {
   };
 
   const handleRefresh = async () => {
-    // Force re-login on refresh
-    handleLogout();
+    if (token) {
+      await validateAndLoadData(token);
+    } else {
+      // Logout
+      setIsAuthenticated(false);
+      setDashboardData(null);
+      setToken("");
+      setError("");
+      setParticipantFilter("all");
+    }
   };
 
-  const exportData = async () => {
-    // Always require fresh token for exports
+  const exportData = async (filterType = "all") => {
     if (!token) {
-      setError("Please log in again to export data");
+      setError("Please log in to export data");
       return;
     }
 
-    setIsLoading(true);
+    setIsExporting(true);
     try {
       const response = await fetch("/api/admin", {
         method: "POST",
@@ -90,31 +99,39 @@ export default function AdminDashboard() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          action: "export",
+          action: "export-data",
           token: token,
+          filterType: filterType
         }),
       });
 
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `psycotest_export_${
-          new Date().toISOString().split("T")[0]
-        }.csv`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        
+        const filterNames = {
+          "all": "all_participants",
+          "research": "research_participants", 
+          "public": "public_participants"
+        };
+        
+        const date = new Date().toISOString().split('T')[0];
+        a.download = `psycotest_${filterNames[filterType]}_${date}.csv`;
+        document.body.appendChild(a);
+        a.click();
         window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
       } else {
         setError("Failed to export data");
       }
     } catch (err) {
-      setError("Export failed");
+      setError("Failed to export data");
       console.error("Export error:", err);
     } finally {
-      setIsLoading(false);
+      setIsExporting(false);
     }
   };
 
@@ -157,6 +174,40 @@ export default function AdminDashboard() {
   const closeModal = () => {
     setShowModal(false);
     setSelectedParticipant(null);
+  };
+
+  // Filter participants based on selected filter
+  const getFilteredParticipants = () => {
+    const participants = dashboardData?.participants || [];
+    
+    switch (participantFilter) {
+      case "research":
+        return participants.filter(p => p.userType === "research");
+      case "public":
+        return participants.filter(p => p.userType === "general");
+      case "all":
+      default:
+        return participants;
+    }
+  };
+
+  // Get statistics for filtered participants
+  const getFilteredStats = () => {
+    const filteredParticipants = getFilteredParticipants();
+    const stats = dashboardData?.stats || {};
+    
+    // Calculate filtered stats
+    const filteredStats = {
+      ...stats,
+      totalParticipants: filteredParticipants.length,
+      activeParticipants: filteredParticipants.filter(p => (p.testsCompleted || 0) > 0).length,
+      completedParticipants: filteredParticipants.filter(p => (p.testsCompleted || 0) >= 4).length,
+      averageTestsCompleted: filteredParticipants.length > 0 
+        ? filteredParticipants.reduce((sum, p) => sum + (p.testsCompleted || 0), 0) / filteredParticipants.length 
+        : 0
+    };
+    
+    return filteredStats;
   };
 
   // Format metric values for display
@@ -314,8 +365,8 @@ export default function AdminDashboard() {
   }
 
   // Dashboard Screen
-  const stats = dashboardData?.stats || {};
-  const participants = dashboardData?.participants || [];
+  const stats = getFilteredStats();
+  const participants = getFilteredParticipants();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -350,7 +401,7 @@ export default function AdminDashboard() {
                 Logout
               </button>
               <button
-                onClick={exportData}
+                onClick={() => exportData("all")}
                 className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition duration-200 flex items-center gap-2"
               >
                 <svg
@@ -533,17 +584,92 @@ export default function AdminDashboard() {
 
         {/* Participants Table */}
         <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-800">
-              Participants ({participants.length})
-            </h2>
+          {/* Filter and Export Controls */}
+          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="flex items-center gap-4">
+                <h2 className="text-xl font-semibold text-gray-800">
+                  Participants ({participants.length})
+                </h2>
+                
+                {/* Filter Buttons */}
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-gray-500" />
+                  <div className="flex bg-white rounded-lg border border-gray-200 overflow-hidden">
+                    <button
+                      onClick={() => setParticipantFilter("all")}
+                      className={`px-3 py-1 text-xs font-medium transition-colors ${
+                        participantFilter === "all"
+                          ? "bg-blue-600 text-white"
+                          : "text-gray-600 hover:bg-gray-100"
+                      }`}
+                    >
+                      All ({dashboardData?.participants?.length || 0})
+                    </button>
+                    <button
+                      onClick={() => setParticipantFilter("research")}
+                      className={`px-3 py-1 text-xs font-medium transition-colors border-l border-gray-200 ${
+                        participantFilter === "research"
+                          ? "bg-blue-600 text-white"
+                          : "text-gray-600 hover:bg-gray-100"
+                      }`}
+                    >
+                      Research ({dashboardData?.participants?.filter(p => p.userType === "research").length || 0})
+                    </button>
+                    <button
+                      onClick={() => setParticipantFilter("public")}
+                      className={`px-3 py-1 text-xs font-medium transition-colors border-l border-gray-200 ${
+                        participantFilter === "public"
+                          ? "bg-blue-600 text-white"
+                          : "text-gray-600 hover:bg-gray-100"
+                      }`}
+                    >
+                      Public ({dashboardData?.participants?.filter(p => p.userType === "general").length || 0})
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Export Buttons */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600 mr-2">Export:</span>
+                <button
+                  onClick={() => exportData("all")}
+                  disabled={isExporting}
+                  className="flex items-center gap-1 px-3 py-1 bg-green-600 text-white text-xs font-medium rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
+                >
+                  <Download className="w-3 h-3" />
+                  All
+                </button>
+                <button
+                  onClick={() => exportData("research")}
+                  disabled={isExporting}
+                  className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+                >
+                  <Download className="w-3 h-3" />
+                  Research
+                </button>
+                <button
+                  onClick={() => exportData("public")}
+                  disabled={isExporting}
+                  className="flex items-center gap-1 px-3 py-1 bg-purple-600 text-white text-xs font-medium rounded-md hover:bg-purple-700 transition-colors disabled:opacity-50"
+                >
+                  <Download className="w-3 h-3" />
+                  Public
+                </button>
+              </div>
+            </div>
           </div>
+
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Participant
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Type
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Demographics
@@ -576,7 +702,23 @@ export default function AdminDashboard() {
                         <div className="text-sm text-gray-500">
                           {participant.email || "No email"}
                         </div>
+                        {participant.participantCode && (
+                          <div className="text-xs text-blue-600 font-mono">
+                            Code: {participant.participantCode}
+                          </div>
+                        )}
                       </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          participant.userType === "research"
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-purple-100 text-purple-800"
+                        }`}
+                      >
+                        {participant.userType === "research" ? "Research" : "Public"}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                       <div className="space-y-1">
@@ -1072,3 +1214,4 @@ export default function AdminDashboard() {
     </div>
   );
 }
+ 

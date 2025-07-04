@@ -58,7 +58,7 @@ export default function TestsPage() {
         
         // If there are test results but testsCompleted doesn't match, sync progress
         if (testResultsCount > 0 && testResultsCount !== testsCompletedCount) {
-          console.log('🔄 Syncing study progress with existing test results...');
+         
           try {
             const syncResponse = await fetch('/api/participants/sync-progress', {
               method: 'POST',
@@ -67,8 +67,7 @@ export default function TestsPage() {
             
             if (syncResponse.ok) {
               const syncData = await syncResponse.json();
-              console.log('✅ Study progress synced:', syncData.participant);
-              
+
               // Update participant data with synced progress
               const updatedData = { ...data };
               updatedData.participant = {
@@ -295,7 +294,7 @@ export default function TestsPage() {
           </p>
           <button
             onClick={handleSignOut}
-            className="inline-flex items-center text-sm text-red-600 hover:text-red-800 transition-colors px-3 py-2 rounded-md hover:bg-red-50"
+            className="inline-flex items-center cursor-pointer text-sm text-red-600 hover:text-red-800 transition-colors px-3 py-2 rounded-md hover:bg-red-50"
           >
             <LogOut className="w-4 h-4 mr-2" />
             Sign Out
