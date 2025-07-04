@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
+import { Users,CheckCheck, User, Clock  } from "lucide-react";
 export default function AdminDashboard() {
   const [token, setToken] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -161,6 +161,14 @@ export default function AdminDashboard() {
 
   // Format metric values for display
   const formatMetricValue = (key, value) => {
+
+    // if the key is completedAt or the type of value is date then format the date to dd/mm/yyyy
+    if (key === "completedAt") {
+      const date = new Date(value);
+      if (isNaN(date)) return "Invalid Date"; // optional handling
+      return date.toLocaleDateString("en-GB");
+    }
+
     // Handle null/undefined values
     if (value === null || value === undefined) return "N/A";
 
@@ -178,7 +186,10 @@ export default function AdminDashboard() {
     // Handle objects
     if (typeof value === "object") {
       if (Object.keys(value).length === 0) return "Empty Object";
-      return `Object (${Object.keys(value).length} keys)`;
+
+      // it should return the value of the object as a string 
+      return value;
+     
     }
 
     // Handle numbers with proper formatting
@@ -200,7 +211,7 @@ export default function AdminDashboard() {
         key.toLowerCase().includes("rate") ||
         (value <= 1 && value >= 0 && key.toLowerCase().includes("proportion"))
       ) {
-        return `${Math.round(value * 100)}%`;
+        return `${value.toFixed(2)}%`;
       }
 
       // Regular numbers
@@ -376,19 +387,7 @@ export default function AdminDashboard() {
                 </p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-blue-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
-                  />
-                </svg>
+                <Users className="w-6 h-6 text-blue-600" />
               </div>
             </div>
           </div>
@@ -404,19 +403,7 @@ export default function AdminDashboard() {
                 </p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-green-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
+                <CheckCheck className="w-6 h-6 text-green-600" />
               </div>
             </div>
           </div>
@@ -430,19 +417,7 @@ export default function AdminDashboard() {
                 </p>
               </div>
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-purple-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
+                <User className="w-6 h-6 text-purple-600" />
               </div>
             </div>
           </div>
@@ -458,19 +433,7 @@ export default function AdminDashboard() {
                 </p>
               </div>
               <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-orange-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
+                <Clock className="w-6 h-6 text-orange-600" />
               </div>
             </div>
           </div>
@@ -958,22 +921,33 @@ export default function AdminDashboard() {
                           {/* Test Metrics */}
                           {result.metrics && (
                             <div className="bg-gray-50 rounded-lg p-3 mt-3">
-                              <h5 className="font-medium text-gray-700 mb-2">
+                              <h5 className="font-bold text-purple-600 mb-2 text-left">
                                 Performance Metrics
                               </h5>
                               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                 {Object.entries(result.metrics).map(
                                   ([key, value]) => (
                                     <div key={key} className="text-center">
-                                      <p className="text-xs text-gray-600 uppercase tracking-wide">
+                                      <p className="text-xs text-pink-600 uppercase tracking-wide font-bold text-left mb-2">
                                         {key
                                           .replace(/([A-Z])/g, " $1")
                                           .replace(/_/g, " ")
                                           .trim()}
                                       </p>
-                                      <p className="text-sm font-semibold text-gray-900">
-                                        {formatMetricValue(key, value)}
-                                      </p>
+                                     
+                                        {typeof formatMetricValue(key, value) ===
+                                        "object"
+                                          ? // we have to format the object we have to separate the keys and value and show them in columns
+                                          <div className="grid grid-cols-1 gap-2 text-left">
+                                            {Object.entries(formatMetricValue(key, value)).map(([k, v]) => (
+                                              <div key={k}>
+                                                <span className="text-gray-500 text-sm">{k}:</span>
+                                                <span className="ml-1 text-sm text-gray-800 font-bold">{v}</span>
+                                              </div>
+                                            ))}
+                                          </div>
+                                          :  <p className="text-sm font-semibold text-gray-900 text-left">{formatMetricValue(key, value)}</p>
+                                      }
                                     </div>
                                   )
                                 )}
