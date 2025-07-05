@@ -23,10 +23,17 @@ export default function Home() {
         const response = await fetch('/api/participants');
         const data = await response.json();
         
-        if (response.ok && data.registered) {
-          // User is registered, redirect to tests
+        // Only redirect to tests if user is registered AND has completed their profile
+        // (firstName and lastName are not 'unknown')
+        if (response.ok && data.registered && 
+            data.firstName !== 'unknown' && 
+            data.lastName !== 'unknown' && 
+            data.firstName && data.lastName) {
+          // User is registered and has completed profile, redirect to tests
           router.push('/tests');
         }
+        // If user is registered but profile is incomplete (firstName/lastName are 'unknown'),
+        // stay on this page to allow profile completion
       } catch (error) {
         console.error('❌ Registration check error:', error);
         // If check fails, stay on page to allow manual registration
