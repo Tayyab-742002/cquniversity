@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import LoadingSpinner from "../common/LoadingSpinner";
@@ -7,6 +7,127 @@ import PreviousResultCard from "./PreviousResultCard";
 // Import JsPsych plugins dynamically to avoid SSR issues
 let setupJsPsych, createJsPsychContainer, cleanupJsPsych;
 let htmlKeyboardResponse, htmlButtonResponse, preload, instructions;
+
+// Utility to detect touch devices (mobile/tablet)
+function isTouchDevice() {
+  if (typeof window === "undefined") return false;
+  return (
+    "ontouchstart" in window ||
+    navigator.maxTouchPoints > 0 ||
+    navigator.msMaxTouchPoints > 0
+  );
+}
+
+function ArrowKeyboard({ onArrow }) {
+  // Responsive on-screen arrow keyboard
+  return (
+    <div className="fixed bottom-0 left-0 w-full flex justify-center z-50 bg-white/90 py-3 border-t border-gray-200 md:static md:bg-transparent md:border-0 md:py-0">
+      <div className="flex flex-col items-center space-y-2">
+        <button
+          aria-label="Up"
+          className="arrow-key-btn"
+          onClick={() => onArrow("ArrowUp")}
+        >
+          {/* Up Arrow */}
+          <svg
+            className="w-10 h-10 text-gray-700"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 5l-7 7m7-7l7 7M12 5v14"
+            />
+          </svg>
+        </button>
+        <div className="flex space-x-8">
+          <button
+            aria-label="Left"
+            className="arrow-key-btn"
+            onClick={() => onArrow("ArrowLeft")}
+          >
+            {/* Left Arrow */}
+            <svg
+              className="w-10 h-10 text-gray-700"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 12l7-7m-7 7l7 7M5 12h14"
+              />
+            </svg>
+          </button>
+          <button
+            aria-label="Right"
+            className="arrow-key-btn"
+            onClick={() => onArrow("ArrowRight")}
+          >
+            {/* Right Arrow */}
+            <svg
+              className="w-10 h-10 text-gray-700"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 12l-7-7m7 7l-7 7M19 12H5"
+              />
+            </svg>
+          </button>
+        </div>
+        <button
+          aria-label="Down"
+          className="arrow-key-btn"
+          onClick={() => onArrow("ArrowDown")}
+        >
+          {/* Down Arrow */}
+          <svg
+            className="w-10 h-10 text-gray-700"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 19l-7-7m7 7l7-7M12 19V5"
+            />
+          </svg>
+        </button>
+      </div>
+      <style jsx>{`
+        .arrow-key-btn {
+          background: #f3f4f6;
+          border-radius: 0.75rem;
+          padding: 0.5rem 1.25rem;
+          margin: 0 0.25rem;
+          border: 1px solid #e5e7eb;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+          transition: background 0.2s;
+        }
+        .arrow-key-btn:active {
+          background: #e0e7ff;
+        }
+        @media (min-width: 768px) {
+          .arrow-key-btn {
+            padding: 0.5rem 1.5rem;
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
 
 export default function StroopTest({
   participantId,
@@ -23,14 +144,17 @@ export default function StroopTest({
   const [error, setError] = useState("");
   const [results, setResults] = useState(null);
   const [isClient, setIsClient] = useState(false);
-  
-
+  const [showArrowKeyboard, setShowArrowKeyboard] = useState(false);
+  const jspsychTargetRef = useRef(null);
+  const jsPsychInstanceRef = useRef(null); // <-- store jsPsych instance
 
   // Check if we're on the client side
   useEffect(() => {
     setIsClient(true);
+    if (isTouchDevice()) {
+      setShowArrowKeyboard(true);
+    }
   }, []);
-
 
   useEffect(() => {
     if (!isClient || status === "results") return;
@@ -131,8 +255,6 @@ export default function StroopTest({
       completedAt: new Date().toISOString(),
     };
 
-
-
     try {
       setStatus("saving");
 
@@ -148,7 +270,6 @@ export default function StroopTest({
         });
       }
 
-     
       setStatus("results");
     } catch (error) {
       console.error("Error saving results:", error);
@@ -158,29 +279,13 @@ export default function StroopTest({
   };
 
   const initializeTest = () => {
-    // Test parameters - following exact specification
-    const controlTrials = 20; // 5 left + 5 right + 5 up + 5 down
-    const experimentalTrials = 40; // 10 trials each for 4 directions
-    const practiceTrials = 8; // 4 control + 4 experimental practice
-
-    // Calculate total trials including tutorials
-    const tutorialScreens = 6;
-    const transitionScreens = 2; // Control start + experimental start
-    const totalTrials =
-      tutorialScreens +
-      practiceTrials +
-      controlTrials +
-      experimentalTrials +
-      transitionScreens +
-      1;
-    
     let currentTrialIndex = 0;
     let controlResults = [];
     let experimentalResults = [];
 
     // Create the container first
     createJsPsychContainer();
-    
+
     const jsPsych = setupJsPsych({
       on_finish: async () => {
         await saveResults(jsPsych.data.get().values());
@@ -208,6 +313,7 @@ export default function StroopTest({
         }
       },
     });
+    jsPsychInstanceRef.current = jsPsych; // <-- store instance
 
     // Professional CSS using global variables
     const stroopCSS = `
@@ -215,6 +321,7 @@ export default function StroopTest({
         max-width: 1000px;
         margin: 0 auto;
         font-family: var(--font-sans);
+        box-sizing: border-box;
       }
       
       .stroop-container {
@@ -230,6 +337,146 @@ export default function StroopTest({
         align-items: center;
         justify-content: center;
         overflow: hidden;
+        box-sizing: border-box;
+      }
+      
+      /* Responsive styles for .stroop-container */
+      @media (max-width: 900px) {
+        .stroop-container {
+          width: 95vw;
+          height: 50vw;
+          min-height: 260px;
+          max-width: 98vw;
+        }
+      }
+      @media (max-width: 600px) {
+        .stroop-container {
+          width: 100vw;
+          left: 50%;
+          transform: translateX(-50%);
+          height: 48vw;
+          min-height: 180px;
+          max-width: 100vw;
+          padding: 0;
+          border-radius: 0;
+          margin: 0;
+          overflow-x: hidden;
+        }
+        .jspsych-content {
+          padding: 0 !important;
+          margin: 0 !important;
+          max-width: 100vw !important;
+          overflow-x: hidden !important;
+        }
+        html, body {
+          overflow-x: hidden !important;
+        }
+      }
+      @media (max-width: 480px) {
+        .stroop-container {
+          width: 100vw;
+          height: 60vw;
+          min-height: 120px;
+          max-width: 100vw;
+          border-radius: 0;
+          left: 50%;
+          transform: translateX(-50%);
+          margin: 0;
+          overflow-x: hidden;
+        }
+      }
+      
+      .arrow-stimulus {
+        font-size: 120px;
+        font-weight: 900;
+        color: var(--foreground);
+        text-shadow: 0 4px 8px hsl(var(--foreground) / 0.3);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        user-select: none;
+        font-family: var(--font-mono);
+      }
+      @media (max-width: 900px) {
+        .arrow-stimulus { font-size: 8vw; }
+      }
+      @media (max-width: 600px) {
+        .arrow-stimulus { font-size: 12vw; }
+      }
+      @media (max-width: 480px) {
+        .arrow-stimulus { font-size: 16vw; }
+      }
+      
+      .arrow-left { position: absolute; left: 12%; }
+      .arrow-right { position: absolute; right: 12%; }
+      .arrow-up { position: absolute; top: 12%; left: 50%; transform: translateX(-50%); }
+      .arrow-down { position: absolute; bottom: 12%; left: 50%; transform: translateX(-50%); }
+      .arrow-center { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+      
+      @media (max-width: 900px) {
+        .arrow-left { left: 7%; }
+        .arrow-right { right: 7%; }
+        .arrow-up { top: 7%; }
+        .arrow-down { bottom: 7%; }
+      }
+      @media (max-width: 600px) {
+        .arrow-left { left: 4%; }
+        .arrow-right { right: 4%; }
+        .arrow-up { top: 4%; }
+        .arrow-down { bottom: 4%; }
+      }
+      
+      .phase-badge {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: var(--primary);
+        color: var(--primary-foreground);
+        padding: 8px 16px;
+        border-radius: calc(var(--radius) * 4);
+        font-weight: 700;
+        font-size: 14px;
+        box-shadow: var(--shadow-md);
+      }
+      @media (max-width: 600px) {
+        .phase-badge {
+          top: 8px;
+          right: 8px;
+          font-size: 12px;
+          padding: 6px 10px;
+        }
+      }
+      .trial-counter {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background: var(--muted);
+        color: var(--muted-foreground);
+        padding: 8px 16px;
+        border-radius: calc(var(--radius) * 4);
+        font-weight: 600;
+        font-size: 14px;
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--border);
+      }
+      @media (max-width: 600px) {
+        .trial-counter {
+          top: 8px;
+          left: 8px;
+          font-size: 12px;
+          padding: 6px 10px;
+        }
+      }
+      .fixation-cross {
+        font-size: 48px;
+        font-weight: 900;
+        color: var(--muted-foreground);
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        font-family: var(--font-mono);
+      }
+      @media (max-width: 600px) {
+        .fixation-cross { font-size: 8vw; }
       }
       
       .arrow-stimulus {
@@ -558,7 +805,7 @@ export default function StroopTest({
 
     practiceControlTrials.forEach((trial, index) => {
       // Fixation
-    timeline.push({
+      timeline.push({
         type: htmlKeyboardResponse,
         stimulus: `
             <div class="stroop-container">
@@ -576,9 +823,13 @@ export default function StroopTest({
             <div class="stroop-container">
               <div class="phase-badge">PRACTICE</div>
               <div class="arrow-stimulus arrow-${trial.position}">${
-          trial.direction === "left" ? "←" : 
-          trial.direction === "right" ? "→" :
-          trial.direction === "up" ? "↑" : "↓"
+          trial.direction === "left"
+            ? "←"
+            : trial.direction === "right"
+            ? "→"
+            : trial.direction === "up"
+            ? "↑"
+            : "↓"
         }</div>
           </div>
         `,
@@ -592,7 +843,6 @@ export default function StroopTest({
           trial_number: index + 1,
         },
         on_finish: function (data) {
-
           // Fix response mapping - jsPsych might return different values
           let correctKey;
           if (trial.direction === "left") {
@@ -619,10 +869,7 @@ export default function StroopTest({
             trial.direction === "right"
           ) {
             isCorrect = true;
-          } else if (
-            data.response === "arrowup" &&
-            trial.direction === "up"
-          ) {
+          } else if (data.response === "arrowup" && trial.direction === "up") {
             isCorrect = true;
           } else if (
             data.response === "arrowdown" &&
@@ -639,10 +886,7 @@ export default function StroopTest({
             trial.direction === "right"
           ) {
             isCorrect = true;
-          } else if (
-            data.response === "ArrowUp" &&
-            trial.direction === "up"
-          ) {
+          } else if (data.response === "ArrowUp" && trial.direction === "up") {
             isCorrect = true;
           } else if (
             data.response === "ArrowDown" &&
@@ -677,8 +921,6 @@ export default function StroopTest({
 
           data.correct = isCorrect;
           data.reaction_time = data.rt || 0;
-
-      
         },
       });
     });
@@ -711,14 +953,18 @@ export default function StroopTest({
             <div class="stroop-container">
               <div class="phase-badge">PRACTICE</div>
               <div class="arrow-stimulus arrow-${trial.position}">${
-          trial.direction === "left" ? "←" : 
-          trial.direction === "right" ? "→" :
-          trial.direction === "up" ? "↑" : "↓"
+          trial.direction === "left"
+            ? "←"
+            : trial.direction === "right"
+            ? "→"
+            : trial.direction === "up"
+            ? "↑"
+            : "↓"
         }</div>
             </div>
           `,
         choices: ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"],
-          data: {
+        data: {
           task: "visual-stroop",
           phase: "practice",
           condition: "experimental",
@@ -728,7 +974,6 @@ export default function StroopTest({
           trial_number: index + 1,
         },
         on_finish: function (data) {
-
           // Fix response mapping - jsPsych might return different values
           let correctKey;
           if (trial.direction === "left") {
@@ -755,10 +1000,7 @@ export default function StroopTest({
             trial.direction === "right"
           ) {
             isCorrect = true;
-          } else if (
-            data.response === "arrowup" &&
-            trial.direction === "up"
-          ) {
+          } else if (data.response === "arrowup" && trial.direction === "up") {
             isCorrect = true;
           } else if (
             data.response === "arrowdown" &&
@@ -775,10 +1017,7 @@ export default function StroopTest({
             trial.direction === "right"
           ) {
             isCorrect = true;
-          } else if (
-            data.response === "ArrowUp" &&
-            trial.direction === "up"
-          ) {
+          } else if (data.response === "ArrowUp" && trial.direction === "up") {
             isCorrect = true;
           } else if (
             data.response === "ArrowDown" &&
@@ -820,7 +1059,7 @@ export default function StroopTest({
     // Control condition start
     timeline.push({
       type: htmlButtonResponse,
-        stimulus: `
+      stimulus: `
         <div class="stroop-header">
           <div class="stroop-title">Part 1: Control Condition</div>
           <div class="stroop-subtitle">Arrows will appear in the center of the screen</div>
@@ -869,14 +1108,18 @@ export default function StroopTest({
             <div class="phase-badge">CONTROL</div>
             <div class="trial-counter">Trial ${index + 1}/20</div>
             <div class="arrow-stimulus arrow-${trial.position}">${
-          trial.direction === "left" ? "←" : 
-          trial.direction === "right" ? "→" :
-          trial.direction === "up" ? "↑" : "↓"
+          trial.direction === "left"
+            ? "←"
+            : trial.direction === "right"
+            ? "→"
+            : trial.direction === "up"
+            ? "↑"
+            : "↓"
         }</div>
           </div>
         `,
         choices: ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"],
-          data: {
+        data: {
           task: "visual-stroop",
           phase: "response",
           condition: "control",
@@ -885,8 +1128,6 @@ export default function StroopTest({
           trial_number: index + 1,
         },
         on_finish: function (data) {
-
-
           // Fix response mapping - jsPsych might return different values
           let correctKey;
           if (trial.direction === "left") {
@@ -913,10 +1154,7 @@ export default function StroopTest({
             trial.direction === "right"
           ) {
             isCorrect = true;
-          } else if (
-            data.response === "arrowup" &&
-            trial.direction === "up"
-          ) {
+          } else if (data.response === "arrowup" && trial.direction === "up") {
             isCorrect = true;
           } else if (
             data.response === "arrowdown" &&
@@ -933,10 +1171,7 @@ export default function StroopTest({
             trial.direction === "right"
           ) {
             isCorrect = true;
-          } else if (
-            data.response === "ArrowUp" &&
-            trial.direction === "up"
-          ) {
+          } else if (data.response === "ArrowUp" && trial.direction === "up") {
             isCorrect = true;
           } else if (
             data.response === "ArrowDown" &&
@@ -971,16 +1206,14 @@ export default function StroopTest({
 
           data.correct = isCorrect;
           data.reaction_time = data.rt || 0;
-
-      
         },
       });
     });
-    
+
     // Experimental condition start
-      timeline.push({
-        type: htmlButtonResponse,
-        stimulus: `
+    timeline.push({
+      type: htmlButtonResponse,
+      stimulus: `
         <div class="stroop-header">
           <div class="stroop-title">Part 2: Experimental Condition</div>
           <div class="stroop-subtitle">Arrows will appear on the left or right side of the screen</div>
@@ -1001,27 +1234,27 @@ export default function StroopTest({
     for (let i = 0; i < 10; i++) {
       // Each direction gets 10 trials with mixed positions
       const positions = ["left", "right", "up", "down"];
-      
+
       // Add one trial for each direction
       experimentalTrialsList.push({
         direction: "left",
         position: positions[i % 4],
-        congruent: (i % 4) === 1, // congruent when position is "left"
+        congruent: i % 4 === 1, // congruent when position is "left"
       });
       experimentalTrialsList.push({
         direction: "right",
         position: positions[i % 4],
-        congruent: (i % 4) === 0, // congruent when position is "right" 
+        congruent: i % 4 === 0, // congruent when position is "right"
       });
       experimentalTrialsList.push({
         direction: "up",
         position: positions[i % 4],
-        congruent: (i % 4) === 2, // congruent when position is "up"
+        congruent: i % 4 === 2, // congruent when position is "up"
       });
       experimentalTrialsList.push({
         direction: "down",
         position: positions[i % 4],
-        congruent: (i % 4) === 3, // congruent when position is "down"
+        congruent: i % 4 === 3, // congruent when position is "down"
       });
     }
 
@@ -1032,7 +1265,7 @@ export default function StroopTest({
 
     shuffledExperimentalTrials.forEach((trial, index) => {
       // Fixation cross
-    timeline.push({
+      timeline.push({
         type: htmlKeyboardResponse,
         stimulus: `
           <div class="stroop-container">
@@ -1044,16 +1277,20 @@ export default function StroopTest({
       });
 
       // Main trial
-    timeline.push({
+      timeline.push({
         type: htmlKeyboardResponse,
-      stimulus: `
+        stimulus: `
           <div class="stroop-container">
             <div class="phase-badge">EXPERIMENTAL</div>
             <div class="trial-counter">Trial ${index + 1}/40</div>
             <div class="arrow-stimulus arrow-${trial.position}">${
-          trial.direction === "left" ? "←" : 
-          trial.direction === "right" ? "→" :
-          trial.direction === "up" ? "↑" : "↓"
+          trial.direction === "left"
+            ? "←"
+            : trial.direction === "right"
+            ? "→"
+            : trial.direction === "up"
+            ? "↑"
+            : "↓"
         }</div>
         </div>
       `,
@@ -1068,7 +1305,6 @@ export default function StroopTest({
           trial_number: index + 1,
         },
         on_finish: function (data) {
-
           // Fix response mapping - jsPsych might return different values
           let correctKey;
           if (trial.direction === "left") {
@@ -1095,10 +1331,7 @@ export default function StroopTest({
             trial.direction === "right"
           ) {
             isCorrect = true;
-          } else if (
-            data.response === "arrowup" &&
-            trial.direction === "up"
-          ) {
+          } else if (data.response === "arrowup" && trial.direction === "up") {
             isCorrect = true;
           } else if (
             data.response === "arrowdown" &&
@@ -1115,10 +1348,7 @@ export default function StroopTest({
             trial.direction === "right"
           ) {
             isCorrect = true;
-          } else if (
-            data.response === "ArrowUp" &&
-            trial.direction === "up"
-          ) {
+          } else if (data.response === "ArrowUp" && trial.direction === "up") {
             isCorrect = true;
           } else if (
             data.response === "ArrowDown" &&
@@ -1153,8 +1383,6 @@ export default function StroopTest({
 
           data.correct = isCorrect;
           data.reaction_time = data.rt || 0;
-
-        
         },
       });
     });
@@ -1164,7 +1392,7 @@ export default function StroopTest({
 
     // Start the experiment after a brief delay to ensure DOM is ready
     setTimeout(() => {
-    jsPsych.run(timeline);
+      jsPsych.run(timeline);
     }, 100);
   };
 
@@ -1172,8 +1400,65 @@ export default function StroopTest({
     setStatus("test");
   };
 
+  // Arrow key event handler for on-screen keyboard
+  const handleArrowKey = (arrow) => {
+    // console.log("DETECTED KEY :", arrow);
+    // Create a real KeyboardEvent with all properties
+    const keyMap = {
+      ArrowUp: {
+        key: "ArrowUp",
+        code: "ArrowUp",
+        keyCode: 38,
+        which: 38,
+        bubbles: true,
+        cancelable: true,
+      },
+      ArrowDown: {
+        key: "ArrowDown",
+        code: "ArrowDown",
+        keyCode: 40,
+        which: 40,
+        bubbles: true,
+        cancelable: true,
+      },
+      ArrowLeft: {
+        key: "ArrowLeft",
+        code: "ArrowLeft",
+        keyCode: 37,
+        which: 37,
+        bubbles: true,
+        cancelable: true,
+      },
+      ArrowRight: {
+        key: "ArrowRight",
+        code: "ArrowRight",
+        keyCode: 39,
+        which: 39,
+        bubbles: true,
+        cancelable: true,
+      },
+    };
+    const props = keyMap[arrow] || { key: arrow };
+    const event = new KeyboardEvent("keydown", {
+      key: props.key,
+      code: props.code,
+      keyCode: props.keyCode,
+      which: props.which,
+      bubbles: true,
+      cancelable: true,
+    });
+    // console.log("EVENT :", event);
+    // Hack: define keyCode/which for browsers that don't set them
+    Object.defineProperty(event, "keyCode", { get: () => props.keyCode });
+    Object.defineProperty(event, "which", { get: () => props.which });
+    // Dispatch to jspsych-target and document
+    const jspsychTarget = document.getElementById("jspsych-target");
+    if (jspsychTarget) jspsychTarget.dispatchEvent(event);
+    document.dispatchEvent(event);
+  };
+
   if (status === "results" && (results || showResults)) {
-  return (
+    return (
       <PreviousResultCard
         testName="Visual Stroop Test"
         testId="stroopTest"
@@ -1184,22 +1469,22 @@ export default function StroopTest({
           setResults(null);
           setError("");
         }}
-        formatResults={()=>{
+        formatResults={() => {
           return {
             totalTrials: previousResult.metrics.totalTrials,
             accuracy: previousResult.metrics.accuracy,
             averageRT: previousResult.metrics.averageRT,
             stroopEffect: previousResult.metrics.stroopEffect,
-          }
+          };
         }}
       />
     );
   }
 
   return (
-    <div className="flex flex-col items-center justify-center py-12">
+    <div className="flex flex-col items-center justify-center py-6 sm:py-12">
       {status === "instructions" && (
-        <div className="bg-white rounded-xl shadow-xl p-8 max-w-5xl w-full">
+        <div className="bg-white rounded-xl shadow-xl p-4 sm:p-8 max-w-5xl w-full">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-gray-800 mb-4">
               Visual Stroop Test
@@ -1225,28 +1510,29 @@ export default function StroopTest({
                       strokeWidth={2}
                       d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
-            </svg>
+                  </svg>
                   Instructions
                 </h2>
                 <div className="space-y-4 text-gray-700 leading-relaxed">
                   <p>
                     You will see <strong>arrows</strong> appearing on your
-                    screen pointing left ←, right →, up ↑, or down ↓. Your task is to
-                    respond to the <strong>direction the arrow points</strong>,
-                    regardless of where it appears.
+                    screen pointing left ←, right →, up ↑, or down ↓. Your task
+                    is to respond to the{" "}
+                    <strong>direction the arrow points</strong>, regardless of
+                    where it appears.
                   </p>
                   <p>
-                    Use the <strong>arrow keys</strong> to respond:
-                    left arrow key for left ←, right arrow key for right →,
-                    up arrow key for up ↑, and down arrow key for down ↓.
-                    The test has two phases with different arrow positions.
+                    Use the <strong>arrow keys</strong> to respond: left arrow
+                    key for left ←, right arrow key for right →, up arrow key
+                    for up ↑, and down arrow key for down ↓. The test has two
+                    phases with different arrow positions.
                   </p>
                   <p>
                     Respond as <strong>quickly and accurately</strong> as
                     possible while maintaining high accuracy.
                   </p>
-          </div>
-        </div>
+                </div>
+              </div>
 
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                 <h3 className="font-semibold text-amber-800 mb-3 flex items-center">
@@ -1262,7 +1548,7 @@ export default function StroopTest({
                       strokeWidth={2}
                       d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
                     />
-            </svg>
+                  </svg>
                   Important Rules
                 </h3>
                 <ul className="list-disc list-inside text-amber-700 space-y-2 text-sm">
@@ -1274,12 +1560,15 @@ export default function StroopTest({
                     Ignore the <strong>position</strong> where the arrow appears
                     on screen
                   </li>
-                  <li>Use keyboard arrow keys: ← for left, → for right, ↑ for up, ↓ for down</li>
+                  <li>
+                    Use keyboard arrow keys: ← for left, → for right, ↑ for up,
+                    ↓ for down
+                  </li>
                   <li>Respond as quickly and accurately as possible</li>
                   <li>The test includes tutorial and practice trials</li>
                 </ul>
-          </div>
-        </div>
+              </div>
+            </div>
 
             <div className="flex flex-col items-center">
               <h2 className="text-2xl font-semibold text-gray-800 mb-4">
@@ -1294,7 +1583,7 @@ export default function StroopTest({
                   <div className="p-3 bg-white rounded border border-pink-200">
                     <div className="font-semibold text-pink-800">
                       Control Condition
-          </div>
+                    </div>
                     <div className="text-xs mt-1">
                       Arrows appear in center of screen
                     </div>
@@ -1304,7 +1593,8 @@ export default function StroopTest({
                       Experimental Condition
                     </div>
                     <div className="text-xs mt-1">
-                      Arrows appear in different positions (left, right, up, down)
+                      Arrows appear in different positions (left, right, up,
+                      down)
                     </div>
                   </div>
                 </div>
@@ -1320,7 +1610,7 @@ export default function StroopTest({
           </div>
 
           <div className="flex justify-center mt-8">
-            <button 
+            <button
               onClick={startTest}
               className="bg-accent cursor-pointer text-white px-10 py-4 rounded-lg text-lg font-semibold hover:from-pink-700 hover:to-red-700 transition-all duration-200 shadow-lg hover:shadow-xl"
             >
@@ -1331,7 +1621,10 @@ export default function StroopTest({
       )}
 
       {status === "running" && (
-        <div id="jspsych-target" className="w-full"></div>
+        <>
+          <div id="jspsych-target" ref={jspsychTargetRef} className="w-full" />
+          {showArrowKeyboard && <ArrowKeyboard onArrow={handleArrowKey} />}
+        </>
       )}
 
       {status === "saving" && (
@@ -1363,14 +1656,14 @@ export default function StroopTest({
           <p className="text-gray-600 mb-6">
             We encountered an issue. Please try again.
           </p>
-            <button 
+          <button
             onClick={() => setStatus("instructions")}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Try Again
-            </button>
+          >
+            Try Again
+          </button>
         </div>
       )}
     </div>
   );
-} 
+}

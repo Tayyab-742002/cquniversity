@@ -257,28 +257,74 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
 
     // Professional CSS using global variables
     const corsiCSS = `
+      body, html {
+        overflow-x: hidden;
+        box-sizing: border-box;
+      }
+      
+      * {
+        box-sizing: border-box;
+      }
+      
       .jspsych-content {
-        max-width: 1000px;
+        max-width: min(1000px, 100vw);
         margin: 0 auto;
         font-family: var(--font-sans);
+        box-sizing: border-box;
+        padding: 0 10px;
+      }
+      
+      @media (max-width: 600px) {
+        .jspsych-content {
+          padding: 0 5px;
+        }
       }
       
       .corsi-container {
         position: relative;
-        width: 800px;
-        height: 600px;
+        width: min(calc(100vw - 40px), 800px);
+        height: min(70vh, 600px);
         background-color: var(--card);
         margin: 20px auto;
         border-radius: var(--radius-xl);
         border: 4px solid var(--border);
         box-shadow: var(--shadow-2xl);
         overflow: hidden;
+        box-sizing: border-box;
+      }
+      
+      /* Responsive container sizes */
+      @media (max-width: 900px) {
+        .corsi-container {
+          width: calc(100vw - 30px);
+          height: 65vh;
+          min-height: 400px;
+          margin: 15px auto;
+        }
+      }
+      
+      @media (max-width: 600px) {
+        .corsi-container {
+          width: calc(100vw - 20px);
+          height: 60vh;
+          min-height: 350px;
+          margin: 10px auto;
+          border-width: 2px;
+        }
+      }
+      
+      @media (max-width: 400px) {
+        .corsi-container {
+          width: calc(100vw - 16px);
+          height: 55vh;
+          min-height: 300px;
+          margin: 8px auto;
+          border-width: 1px;
+        }
       }
       
       .corsi-block {
         position: absolute;
-        width: 80px;
-        height: 60px;
         background: var(--chart-3);
         border: 3px solid var(--border);
         border-radius: calc(var(--radius) * 2);
@@ -290,9 +336,50 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
         box-shadow: var(--shadow-lg);
         z-index: 10;
         font-weight: 700;
-        font-size: 18px;
         color: var(--primary-foreground);
         user-select: none;
+        
+        /* Responsive block sizes */
+        width: min(12vw, 80px);
+        height: min(9vh, 60px);
+        font-size: clamp(12px, 2.5vw, 18px);
+      }
+      
+      /* Responsive block sizes for different screens */
+      @media (max-width: 900px) {
+        .corsi-block {
+          width: min(15vw, 70px);
+          height: min(10vh, 50px);
+          font-size: clamp(11px, 2.2vw, 16px);
+          border-width: 2px;
+        }
+      }
+      
+      @media (max-width: 600px) {
+        .corsi-block {
+          width: min(18vw, 60px);
+          height: min(12vh, 45px);
+          font-size: clamp(10px, 2vw, 14px);
+          border-width: 2px;
+        }
+      }
+      
+      @media (max-width: 400px) {
+        .corsi-block {
+          width: min(22vw, 45px);
+          height: min(16vh, 35px);
+          font-size: clamp(8px, 1.6vw, 11px);
+          border-width: 1px;
+        }
+      }
+      
+      @media (max-width: 320px) {
+        .corsi-block {
+          width: min(25vw, 40px);
+          height: min(18vh, 30px);
+          font-size: clamp(7px, 1.4vw, 10px);
+          border-width: 1px;
+        }
       }
       
       .corsi-block:hover {
@@ -336,15 +423,22 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
       .corsi-header {
         text-align: center;
         margin-bottom: 20px;
-        padding: 20px;
+        padding: 15px;
         background: var(--card);
         border-radius: var(--radius-lg);
         box-shadow: var(--shadow-md);
         border: 1px solid var(--border);
       }
       
+      @media (max-width: 600px) {
+        .corsi-header {
+          margin-bottom: 15px;
+          padding: 12px;
+        }
+      }
+      
       .corsi-title {
-        font-size: 28px;
+        font-size: clamp(20px, 4vw, 28px);
         font-weight: 800;
         color: var(--foreground);
         margin-bottom: 8px;
@@ -352,7 +446,7 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
       }
       
       .corsi-subtitle {
-        font-size: 16px;
+        font-size: clamp(14px, 2.5vw, 16px);
         color: var(--muted-foreground);
         font-weight: 500;
       }
@@ -364,38 +458,66 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
         background: var(--card);
         border-radius: var(--radius);
         max-width: 500px;
-        font-size: 16px;
+        font-size: clamp(14px, 2.2vw, 16px);
         color: var(--card-foreground);
         border: 1px solid var(--border);
         box-shadow: var(--shadow-sm);
       }
       
+      @media (max-width: 600px) {
+        .corsi-instructions {
+          margin: 15px auto;
+          padding: 12px 16px;
+        }
+      }
+      
       .version-badge {
         position: absolute;
-        top: 20px;
-        right: 20px;
-        background: var(--card);
-        padding: 8px 16px;
-        border-radius: calc(var(--radius) * 4);
+        top: 10px;
+        right: 10px;
+        
+        
+       
         font-weight: 700;
-        font-size: 14px;
+        font-size: clamp(10px, 1.8vw, 14px);
         color: var(--card-foreground);
-        box-shadow: var(--shadow-md);
-        border: 2px solid var(--border);
+      
+       
+        z-index: 20;
+      }
+      
+      @media (max-width: 600px) {
+        .version-badge {
+          top: 0px;
+          right: 0px;
+         
+          font-size: clamp(9px, 1.5vw, 12px);
+         
+        }
       }
       
       .trial-indicator {
         position: absolute;
-        top: 20px;
-        left: 20px;
-        background: var(--card);
-        padding: 8px 16px;
-        border-radius: calc(var(--radius) * 4);
+        top: 10px;
+        left: 10px;
+    
+  
+       
         font-weight: 600;
-        font-size: 14px;
+        font-size: clamp(10px, 1.8vw, 14px);
         color: var(--card-foreground);
-        box-shadow: var(--shadow-md);
-        border: 1px solid var(--border);
+        
+      
+        z-index: 20;
+      }
+      
+      @media (max-width: 600px) {
+        .trial-indicator {
+          top: 0px;
+          left: 0px;
+        
+          font-size: clamp(9px, 1.5vw, 12px);
+        }
       }
       
       .tutorial-screen {
@@ -408,8 +530,15 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
         border: 1px solid var(--border);
       }
       
+      @media (max-width: 600px) {
+        .tutorial-screen {
+          padding: 20px;
+          margin: 15px auto;
+        }
+      }
+      
       .tutorial-title {
-        font-size: 32px;
+        font-size: clamp(24px, 5vw, 32px);
         font-weight: 800;
         color: var(--foreground);
         margin-bottom: 16px;
@@ -418,7 +547,7 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
       }
       
       .tutorial-content {
-        font-size: 18px;
+        font-size: clamp(16px, 2.5vw, 18px);
         line-height: 1.6;
         color: var(--foreground);
         margin-bottom: 24px;
@@ -432,58 +561,39 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
         font-weight: 600;
       }
       
-      .btn-primary {
-        background: var(--primary);
-        color: var(--primary-foreground);
+      .btn-primary, .btn-secondary, .btn-accent {
         border: none;
         padding: 12px 24px;
         border-radius: var(--radius);
         font-weight: 600;
-        font-size: 16px;
+        font-size: clamp(14px, 2.2vw, 16px);
         cursor: pointer;
         transition: all 0.2s;
         box-shadow: var(--shadow-sm);
       }
       
-      .btn-primary:hover {
-        filter: brightness(1.1);
-        box-shadow: var(--shadow-md);
-        transform: translateY(-1px);
+      @media (max-width: 600px) {
+        .btn-primary, .btn-secondary, .btn-accent {
+          padding: 10px 20px;
+        }
+      }
+      
+      .btn-primary {
+        background: var(--primary);
+        color: var(--primary-foreground);
       }
       
       .btn-secondary {
         background: var(--secondary);
         color: var(--secondary-foreground);
-        border: none;
-        padding: 12px 24px;
-        border-radius: var(--radius);
-        font-weight: 600;
-        font-size: 16px;
-        cursor: pointer;
-        transition: all 0.2s;
-        box-shadow: var(--shadow-sm);
-      }
-      
-      .btn-secondary:hover {
-        filter: brightness(1.1);
-        box-shadow: var(--shadow-md);
-        transform: translateY(-1px);
       }
       
       .btn-accent {
         background: var(--accent);
         color: var(--accent-foreground);
-        border: none;
-        padding: 12px 24px;
-        border-radius: var(--radius);
-        font-weight: 600;
-        font-size: 16px;
-        cursor: pointer;
-        transition: all 0.2s;
-        box-shadow: var(--shadow-sm);
       }
       
-      .btn-accent:hover {
+      .btn-primary:hover, .btn-secondary:hover, .btn-accent:hover {
         filter: brightness(1.1);
         box-shadow: var(--shadow-md);
         transform: translateY(-1px);
@@ -499,13 +609,20 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
         border: 1px solid var(--border);
       }
       
+      @media (max-width: 600px) {
+        .results-container {
+          padding: 16px;
+          margin: 15px auto;
+        }
+      }
+      
       .results-header {
         text-align: center;
         margin-bottom: 24px;
       }
       
       .results-title {
-        font-size: 24px;
+        font-size: clamp(20px, 3.5vw, 24px);
         font-weight: 700;
         color: var(--foreground);
         margin-bottom: 8px;
@@ -518,6 +635,13 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
         margin-bottom: 20px;
       }
       
+      @media (max-width: 600px) {
+        .results-grid {
+          grid-template-columns: 1fr;
+          gap: 15px;
+        }
+      }
+      
       .result-card {
         background: var(--muted);
         padding: 16px;
@@ -526,15 +650,21 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
         border: 1px solid var(--border);
       }
       
+      @media (max-width: 600px) {
+        .result-card {
+          padding: 12px;
+        }
+      }
+      
       .result-label {
-        font-size: 14px;
+        font-size: clamp(12px, 2vw, 14px);
         color: var(--muted-foreground);
         font-weight: 500;
         margin-bottom: 4px;
       }
       
       .result-value {
-        font-size: 24px;
+        font-size: clamp(20px, 3.5vw, 24px);
         font-weight: 700;
         color: var(--foreground);
       }
@@ -554,15 +684,18 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
       auto_preload: true
     });
 
-    // Generate truly random block positions using improved algorithm
+    // Generate responsive block positions using percentage-based positioning
     const generateRandomBlockPositions = (numBlocks) => {
       const positions = [];
-      const containerWidth = 800;
-      const containerHeight = 600;
-      const blockWidth = 80;
-      const blockHeight = 60;
-      const minDistance = 120;
-      const padding = 60;
+      // Use percentages instead of fixed pixels for responsive design
+      const containerWidthPercent = 100;
+      const containerHeightPercent = 100;
+      // Adjust block size and spacing based on screen size
+      const screenWidth = window.innerWidth;
+      const blockWidthPercent = screenWidth < 400 ? 22 : screenWidth < 600 ? 18 : 12;
+      const blockHeightPercent = screenWidth < 400 ? 16 : screenWidth < 600 ? 12 : 10;
+      const minDistancePercent = screenWidth < 400 ? 25 : screenWidth < 600 ? 22 : 18;
+      const paddingPercent = screenWidth < 400 ? 5 : screenWidth < 600 ? 6 : 8;
       
       const attempts = 1000;
       
@@ -572,8 +705,8 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
         let x, y;
         
         while (!validPosition && attemptCount < attempts) {
-          x = padding + Math.random() * (containerWidth - blockWidth - 2 * padding);
-          y = padding + Math.random() * (containerHeight - blockHeight - 2 * padding);
+          x = paddingPercent + Math.random() * (containerWidthPercent - blockWidthPercent - 2 * paddingPercent);
+          y = paddingPercent + Math.random() * (containerHeightPercent - blockHeightPercent - 2 * paddingPercent);
           
           validPosition = true;
           
@@ -582,7 +715,7 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
             const dy = pos.y - y;
             const distance = Math.sqrt(dx * dx + dy * dy);
             
-            if (distance < minDistance) {
+            if (distance < minDistancePercent) {
               validPosition = false;
               break;
             }
@@ -594,22 +727,23 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
         if (validPosition) {
           positions.push({ x, y });
         } else {
+          // Fallback grid positioning with better spacing
           const gridCols = 4;
           const gridRows = 3;
           const col = i % gridCols;
           const row = Math.floor(i / gridCols);
-          const cellWidth = (containerWidth - 2 * padding) / gridCols;
-          const cellHeight = (containerHeight - 2 * padding) / gridRows;
+          const cellWidthPercent = (containerWidthPercent - 2 * paddingPercent) / gridCols;
+          const cellHeightPercent = (containerHeightPercent - 2 * paddingPercent) / gridRows;
           
-          const baseX = padding + col * cellWidth + cellWidth / 2 - blockWidth / 2;
-          const baseY = padding + row * cellHeight + cellHeight / 2 - blockHeight / 2;
+          const baseX = paddingPercent + col * cellWidthPercent + cellWidthPercent / 2 - blockWidthPercent / 2;
+          const baseY = paddingPercent + row * cellHeightPercent + cellHeightPercent / 2 - blockHeightPercent / 2;
           
-          const jitterX = (Math.random() - 0.5) * (cellWidth * 0.4);
-          const jitterY = (Math.random() - 0.5) * (cellHeight * 0.4);
+          const jitterX = (Math.random() - 0.5) * (cellWidthPercent * 0.3);
+          const jitterY = (Math.random() - 0.5) * (cellHeightPercent * 0.3);
           
           positions.push({ 
-            x: Math.max(padding, Math.min(baseX + jitterX, containerWidth - blockWidth - padding)),
-            y: Math.max(padding, Math.min(baseY + jitterY, containerHeight - blockHeight - padding))
+            x: Math.max(paddingPercent, Math.min(baseX + jitterX, containerWidthPercent - blockWidthPercent - paddingPercent)),
+            y: Math.max(paddingPercent, Math.min(baseY + jitterY, containerHeightPercent - blockHeightPercent - paddingPercent))
           });
         }
       }
@@ -641,7 +775,7 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
               <div class="version-badge">${version.toUpperCase()}</div>
               <div class="trial-indicator">${isPractice ? 'Practice' : `Trial ${trialNum}`} | Span ${span}</div>
               ${positions.map((pos, i) => 
-                `<div class="corsi-block" id="block-${i}" style="left: ${pos.x}px; top: ${pos.y}px;"></div>`
+                `<div class="corsi-block" id="block-${i}" style="left: ${pos.x}%; top: ${pos.y}%;"></div>`
               ).join('')}
             </div>
           `;
@@ -695,7 +829,7 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
               <div class="version-badge">${version.toUpperCase()}</div>
               <div class="trial-indicator">${isPractice ? 'Practice' : `Trial ${trialNum}`} | Span ${span}</div>
               ${positions.map((pos, i) => 
-                `<div class="corsi-block" id="block-${i}" data-index="${i}" style="left: ${pos.x}px; top: ${pos.y}px;"></div>`
+                `<div class="corsi-block" id="block-${i}" data-index="${i}" style="left: ${pos.x}%; top: ${pos.y}%;"></div>`
               ).join('')}
             </div>
           `;
@@ -885,13 +1019,13 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
   return (
     <div className="flex flex-col items-center justify-center py-12">
       {status === 'instructions' && (
-        <div className="bg-white rounded-xl shadow-xl p-8 max-w-5xl w-full">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-gray-800 mb-4">Corsi Blocks Test</h1>
-            <p className="text-xl text-gray-600">A test of visuospatial working memory</p>
-          </div>
+        <div className="bg-white rounded-xl shadow-xl p-4 sm:p-6 lg:p-8 max-w-5xl w-full mx-4">
+                      <div className="text-center mb-6 sm:mb-8">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800 mb-3 sm:mb-4">Corsi Blocks Test</h1>
+              <p className="text-lg sm:text-xl text-gray-600">A test of visuospatial working memory</p>
+            </div>
           
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
             <div className="space-y-6">
               <div>
               <h2 className="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
@@ -946,7 +1080,7 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
             <div className="flex flex-col items-center">
               <h2 className="text-2xl font-semibold text-gray-800 mb-4">Test Structure</h2>
               
-              <div className="mt-6 p-6 bg-purple-50 rounded-lg w-full max-w-sm">
+                              <div className="mt-6 p-4 sm:p-6 bg-purple-50 rounded-lg w-full max-w-sm mx-auto">
                 <h3 className="font-semibold text-pink-800 mb-4 text-center">Two Parts:</h3>
                 <div className="space-y-3 text-sm text-pink-700">
                   <div className="p-3 bg-white rounded border border-pink-200">
@@ -979,7 +1113,7 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
           <div className="flex justify-center mt-8">
             <button
               onClick={() => setStatus('test')}
-              className="bg-accent cursor-pointer text-white px-10 py-4 rounded-lg text-lg font-semibold "
+              className="bg-accent hover:bg-accent/90 cursor-pointer text-white px-8 sm:px-10 py-3 sm:py-4 rounded-lg text-base sm:text-lg font-semibold transition-colors"
             >
               Start Test
             </button>
@@ -988,7 +1122,7 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
       )}
 
       {status === 'running' && (
-        <div id="jspsych-target" className="w-full"></div>
+        <div id="jspsych-target" className=""></div>
       )}
 
       {status === 'saving' && (
