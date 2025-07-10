@@ -126,7 +126,15 @@ export default function TrailMakingTest({ participantId, showResults = false, pr
   // Generate nodes for different test phases
   const generateNodes = (phase, width, height) => {
     const padding = 60;
-    const nodeRadius = 25;
+    // Responsive node radius
+    let nodeRadius = 25;
+    if (typeof window !== 'undefined') {
+      if (window.innerWidth < 500) {
+        nodeRadius = 14;
+      } else if (window.innerWidth < 800) {
+        nodeRadius = 18;
+      }
+    }
     const nodes = [];
     
     // Create grid of possible positions

@@ -61,26 +61,26 @@ export default function PreviousResultCard({
   const metrics = getTestMetrics();
 
   return (
-    <div className="max-w-4xl mx-auto py-8 px-4">
+    <div className="max-w-4xl mx-auto py-6 px-2 sm:px-4">
       <div className="bg-card border border-border rounded-xl shadow-lg overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-border px-6 py-4">
-          <div className="flex items-center justify-between">
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-border px-4 sm:px-6 py-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
                 <CheckCircle className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-foreground">Test Already Completed</h2>
-                <p className="text-muted-foreground">{testName}</p>
+                <h2 className="text-xl sm:text-2xl font-bold text-foreground">Test Already Completed</h2>
+                <p className="text-muted-foreground text-sm sm:text-base">{testName}</p>
               </div>
             </div>
             <div className="text-right">
-              <div className="flex items-center text-sm text-muted-foreground mb-1">
+              <div className="flex items-center text-xs sm:text-sm text-muted-foreground mb-1">
                 <Calendar className="w-4 h-4 mr-1" />
                 {completedDate.toLocaleDateString()}
               </div>
-              <div className="flex items-center text-sm text-muted-foreground">
+              <div className="flex items-center text-xs sm:text-sm text-muted-foreground">
                 <Clock className="w-4 h-4 mr-1" />
                 {completedDate.toLocaleTimeString()}
               </div>
@@ -89,17 +89,17 @@ export default function PreviousResultCard({
         </div>
 
         {/* Results Summary */}
-        <div className="p-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="p-4 sm:p-6">
+          <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
             {metrics.slice(0, 4).map((metric, index) => (
               <div 
                 key={index}
-                className="text-center p-4 bg-muted/30 rounded-lg border border-border"
+                className="text-center p-3 sm:p-4 bg-muted/30 rounded-lg border border-border"
               >
-                <div className="text-2xl font-bold text-foreground mb-1">
+                <div className="text-xl sm:text-2xl font-bold text-foreground mb-1">
                   {metric.value}
                 </div>
-                <div className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                <div className="text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-wide">
                   {metric.label}
                 </div>
               </div>
@@ -117,13 +117,13 @@ export default function PreviousResultCard({
               </button>
               
               {showDetails && (
-                <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="mt-4 grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
                   {metrics.slice(4).map((metric, index) => (
                     <div 
                       key={index}
-                      className="text-center p-3 bg-muted/20 rounded-lg"
+                      className="text-center p-2 sm:p-3 bg-muted/20 rounded-lg"
                     >
-                      <div className="text-lg font-semibold text-foreground">
+                      <div className="text-base sm:text-lg font-semibold text-foreground">
                         {metric.value}
                       </div>
                       <div className="text-xs text-muted-foreground">
@@ -138,13 +138,6 @@ export default function PreviousResultCard({
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            {/* <button
-              onClick={onRetake}
-              className="flex items-center justify-center px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
-            >
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Retake Test
-            </button> */}
             <button
               onClick={() => router.push('/tests')}
               className="flex items-center justify-center px-6 py-3 bg-muted text-muted-foreground rounded-lg hover:bg-muted/80 transition-colors font-medium"
@@ -154,13 +147,6 @@ export default function PreviousResultCard({
             </button>
           </div>
         </div>
-
-        {/* Additional Info */}
-        {/* <div className="bg-muted/30 px-6 py-4 border-t border-border">
-          <p className="text-sm text-muted-foreground text-center">
-            You can retake this test at any time. Your previous results will be saved and you can compare your performance.
-          </p>
-        </div> */}
       </div>
     </div>
   );
