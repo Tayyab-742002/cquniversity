@@ -13,10 +13,10 @@ export default function MainLayout({ children }) {
           {/* Logo section */}
           <div className="flex items-center justify-between w-full md:w-auto">
             <Link href="/" className="text-xl font-bold flex items-center space-x-2">
-              <Image src="/logo.png" alt="PsycoTest" width={48} height={48} className="w-10 h-10 md:w-[70px] md:h-[70px]" />
+              <Image src="/logo.png" alt="CQUniversity" width={48} height={48} className="w-10 h-10 md:w-[70px] md:h-[70px]" />
               <Image
                 src="/logotext.png"
-                alt="PsycoTest"
+                alt="CQUniversity"
                 width={120}
                 height={20}
                 className="w-[120px] h-auto md:w-[180px]"
@@ -126,10 +126,10 @@ export default function MainLayout({ children }) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
               <Link href="/" className="text-xl font-bold flex items-center mb-4">
-                <Image src="/logo.png" alt="PsycoTest" width={70} height={70} />
+                <Image src="/logo.png" alt="CQUniversity" width={70} height={70} />
                 <Image
                   src="/logotext.png"
-                  alt="PsycoTest"
+                  alt="CQUniversity"
                   width={180}
                   height={20}
                 />
