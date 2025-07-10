@@ -126,7 +126,8 @@ export async function POST(request) {
       const escapeCSVField = (field) => {
         if (field === null || field === undefined) return '';
         const str = field.toString();
-        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        // Always wrap longer strings and strings with special characters in quotes
+        if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('|') || str.length > 50) {
           return `"${str.replace(/"/g, '""')}"`;
         }
         return str;
@@ -156,7 +157,11 @@ export async function POST(request) {
         'Five Points Test Completed',
         'Study Progress (%)',
         'Days Since Registration',
-        'Test Results Summary'
+        'Test Results Summary',
+        'StroopTest_result',
+        'TrailMakingTest_Result',
+        'CorsiBlocksTest_result',
+        'FivePointsTest_results'
       ];
 
       // Map participants to CSV rows with proper formatting
@@ -210,6 +215,47 @@ export async function POST(request) {
           ? `${testResults.length} test(s) completed`
           : 'No tests completed';
 
+        // Helper function to format detailed test results
+        const formatStroopTestResult = (testResults) => {
+          const stroopResult = testResults.find(result => result.testId === 'stroopTest');
+          if (!stroopResult || !stroopResult.metrics) return 'Not completed';
+          
+          const metrics = stroopResult.metrics;
+          const completedAt = stroopResult.completedAt || stroopResult.timestamp;
+          
+          return `CONTROL: totalTrials=${metrics.control?.totalTrials || 'N/A'}, correctTrials=${metrics.control?.correctTrials || 'N/A'}, accuracy=${metrics.control?.accuracy || 'N/A'}%, avgRT=${metrics.control?.avgRT || 'N/A'}ms | EXPERIMENTAL: totalTrials=${metrics.experimental?.totalTrials || 'N/A'}, correctTrials=${metrics.experimental?.correctTrials || 'N/A'}, accuracy=${metrics.experimental?.accuracy || 'N/A'}%, avgRT=${metrics.experimental?.avgRT || 'N/A'}ms | STROOP EFFECT: ${metrics.stroopEffect || 'N/A'} | TOTAL TRIALS: ${metrics.totalTrials || 'N/A'} | CORRECT TRIALS: ${metrics.correctTrials || 'N/A'} | ACCURACY: ${metrics.accuracy || 'N/A'}% | AVERAGE RT: ${metrics.averageRT || 'N/A'}ms | CONGRUENT RT: ${metrics.congruentRT || 'N/A'}ms | INCONGRUENT RT: ${metrics.incongruentRT || 'N/A'}ms | COMPLETED AT: ${completedAt ? new Date(completedAt).toLocaleDateString('en-GB') : 'N/A'}`;
+        };
+
+        const formatTrailMakingTestResult = (testResults) => {
+          const trailResult = testResults.find(result => result.testId === 'trailMakingTest');
+          if (!trailResult || !trailResult.metrics) return 'Not completed';
+          
+          const metrics = trailResult.metrics;
+          const completedAt = trailResult.completedAt || trailResult.timestamp;
+          
+          return `TRIAL A: time=${metrics.trialA?.time || 'N/A'}s, errors=${metrics.trialA?.errors || 'N/A'} | TRIAL B: time=${metrics.trialB?.time || 'N/A'}s, errors=${metrics.trialB?.errors || 'N/A'} | B MINUS A: ${metrics.bMinusA || 'N/A'}s | COMPLETED AT: ${completedAt ? new Date(completedAt).toLocaleDateString('en-GB') : 'N/A'}`;
+        };
+
+        const formatCorsiBlocksTestResult = (testResults) => {
+          const corsiResult = testResults.find(result => result.testId === 'corsiBlocksTest');
+          if (!corsiResult || !corsiResult.metrics) return 'Not completed';
+          
+          const metrics = corsiResult.metrics;
+          const completedAt = corsiResult.completedAt || corsiResult.timestamp;
+          
+          return `FORWARD SPAN: ${metrics.forwardSpan || 'N/A'} | BACKWARD SPAN: ${metrics.backwardSpan || 'N/A'} | TOTAL SPAN: ${metrics.totalSpan || 'N/A'} | FORWARD ACCURACY: ${metrics.forwardAccuracy || 'N/A'}% | BACKWARD ACCURACY: ${metrics.backwardAccuracy || 'N/A'}% | ACCURACY: ${metrics.accuracy || 'N/A'}% | TOTAL TRIALS: ${metrics.totalTrials || 'N/A'} | COMPLETED AT: ${completedAt ? new Date(completedAt).toLocaleDateString('en-GB') : 'N/A'}`;
+        };
+
+        const formatFivePointsTestResult = (testResults) => {
+          const fivePointsResult = testResults.find(result => result.testId === 'fivePointsTest');
+          if (!fivePointsResult || !fivePointsResult.metrics) return 'Not completed';
+          
+          const metrics = fivePointsResult.metrics;
+          const completedAt = fivePointsResult.completedAt || fivePointsResult.timestamp;
+          
+          return `NEW DESIGNS: ${metrics.newDesigns || 'N/A'} | REPETITIONS: ${metrics.repetitions || 'N/A'} | MISTAKES: ${metrics.mistakes || 'N/A'} | TOTAL DESIGNS: ${metrics.totalDesigns || 'N/A'} | DESIGNS: ${Array.isArray(metrics.designs) ? `Array (${metrics.designs.length} items)` : metrics.designs || 'N/A'} | COMPLETED AT: ${completedAt ? new Date(completedAt).toLocaleDateString('en-GB') : 'N/A'}`;
+        };
+
         return [
           generateAnonymousId(participant, index),
           participant.userType === 'research' ? 'Research Participant' : 'Public Participant',
@@ -228,7 +274,11 @@ export async function POST(request) {
           testsCompleted.includes('fivePointsTest') ? 'Yes' : 'No',
           `${progressPercentage}%`,
           daysSinceRegistration,
-          testResultsSummary
+          testResultsSummary,
+          formatStroopTestResult(testResults),
+          formatTrailMakingTestResult(testResults),
+          formatCorsiBlocksTestResult(testResults),
+          formatFivePointsTestResult(testResults)
         ].map(escapeCSVField);
       });
 
