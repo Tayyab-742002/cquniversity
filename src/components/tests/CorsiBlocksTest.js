@@ -1094,7 +1094,7 @@ export default function CorsiBlocksTest({ participantId, showResults = false, pr
                 </div>
                 
                 <div className="mt-4 p-3 bg-white rounded border border-pink-200">
-                  <div className="text-center text-xs text-pink-700">
+                  <div className="text-left text-xs text-pink-700">
                     <div className="font-semibold">Each part: 7 trials</div>
                     <div>Span 2 → 8 blocks</div>
                   </div>
