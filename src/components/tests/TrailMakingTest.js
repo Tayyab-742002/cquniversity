@@ -427,8 +427,8 @@ export default function TrailMakingTest({ participantId, showResults = false, pr
 
   
   const renderTest = (title, subtitle) => (
-    <div className="flex flex-col items-center justify-center py-8">
-      <div className="bg-white rounded-xl shadow-xl p-8 max-w-4xl w-full">
+    <div className="py-8 ">
+      <div className="bg-white rounded-xl shadow-xl  max-w-4xl mx-auto ">
         <div className="text-center mb-6">
           <h2 className="text-2xl font-bold text-gray-800">{title}</h2>
           <p className="text-gray-600">{subtitle}</p>
@@ -437,10 +437,10 @@ export default function TrailMakingTest({ participantId, showResults = false, pr
           )}
         </div>
         
-        <div className="relative w-full bg-gray-50 rounded-lg border-2 border-gray-200" style={{ height: '500px' }}>
+        <div className="relative  bg-gray-50 rounded-lg border-2 border-gray-200  " style={{ height: '500px'}}>
           <canvas 
             ref={canvasRef} 
-            className="absolute top-0 left-0 w-full h-full cursor-pointer rounded-lg"
+            className="absolute top-0 left-0 h-full cursor-pointer rounded-lg"
           />
         </div>
         
