@@ -194,7 +194,7 @@ export default function ResearchSignInPage() {
         {/* Main Form Container */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
               <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Sign in to psycotest</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Sign in to CQUniversity</h2>
                 <p className="text-gray-600">Welcome back! Please sign in to continue</p>
               </div>
 

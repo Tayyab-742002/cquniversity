@@ -105,7 +105,7 @@ export default function SignUpPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div>
-              <h3 className="text-sm font-medium text-blue-800 mb-1">About psycotest</h3>
+              <h3 className="text-sm font-medium text-blue-800 mb-1">About CQUniversity</h3>
               <p className="text-sm text-blue-700">
                 Complete cognitive assessments including reaction time tests, memory tasks, and attention challenges. All data is anonymized and used for research purposes only.
               </p>
