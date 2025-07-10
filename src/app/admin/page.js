@@ -288,12 +288,12 @@ export default function AdminDashboard() {
   // Login Screen
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen  flex  items-center justify-center">
-        <div className="bg-white p-8 rounded-xl shadow-2xl max-w-md w-full border border-gray-300">
-          <div className="text-center mb-8">
-            <div className="mx-auto w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
+      <div className="min-h-screen px-4 flex items-center justify-center">
+        <div className="bg-white p-6 sm:p-8 rounded-xl shadow-2xl max-w-md w-full border border-gray-300">
+          <div className="text-center mb-6 sm:mb-8">
+            <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
               <svg
-                className="w-8 h-8 text-white"
+                className="w-6 h-6 sm:w-8 sm:h-8 text-white"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -306,7 +306,7 @@ export default function AdminDashboard() {
                 />
               </svg>
             </div>
-            <h1 className="text-3xl font-bold text-gray-800">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
               Admin Dashboard
             </h1>
             <p className="text-gray-600 mt-2 text-sm">
@@ -318,7 +318,7 @@ export default function AdminDashboard() {
             <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded">
               <div className="flex">
                 <svg
-                  className="w-5 h-5 mr-2 mt-0.5"
+                  className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -328,7 +328,7 @@ export default function AdminDashboard() {
                     clipRule="evenodd"
                   />
                 </svg>
-                {error}
+                <span className="text-sm">{error}</span>
               </div>
             </div>
           )}
@@ -342,7 +342,7 @@ export default function AdminDashboard() {
                 type="password"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                 placeholder="Enter your admin token"
                 required
               />
@@ -350,7 +350,7 @@ export default function AdminDashboard() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 font-semibold transition duration-200"
+              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 font-semibold transition duration-200 text-sm sm:text-base"
             >
               {isLoading ? "Authenticating..." : "Access Dashboard"}
             </button>
@@ -373,17 +373,17 @@ export default function AdminDashboard() {
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800">
                 CQUniversity Admin
               </h1>
-              <p className="text-gray-600">Research Dashboard & Analytics</p>
+              <p className="text-gray-600 text-sm sm:text-base">Research Dashboard & Analytics</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
               <button
                 onClick={handleRefresh}
-                className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition duration-200 flex items-center gap-2"
+                className="bg-gray-100 text-gray-700 px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-200 transition duration-200 flex items-center justify-center gap-2 text-sm sm:text-base"
               >
                 <svg
                   className="w-4 h-4"
@@ -398,11 +398,13 @@ export default function AdminDashboard() {
                     d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                   />
                 </svg>
-                Logout
+                <span className="hidden sm:inline">Logout</span>
+                <span className="sm:hidden">Logout</span>
               </button>
               <button
                 onClick={() => exportData("all")}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition duration-200 flex items-center gap-2"
+                disabled={isExporting}
+                className="bg-green-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 transition duration-200 flex items-center justify-center gap-2 text-sm sm:text-base"
               >
                 <svg
                   className="w-4 h-4"
@@ -417,7 +419,8 @@ export default function AdminDashboard() {
                     d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                   />
                 </svg>
-                Export CSV
+                <span className="hidden sm:inline">{isExporting ? "Exporting..." : "Export CSV"}</span>
+                <span className="sm:hidden">{isExporting ? "..." : "Export"}</span>
               </button>
             </div>
           </div>
@@ -426,88 +429,88 @@ export default function AdminDashboard() {
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-xl shadow-sm border">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">
                   Total Participants
                 </p>
-                <p className="text-3xl font-bold text-blue-600">
+                <p className="text-2xl sm:text-3xl font-bold text-blue-600">
                   {stats.totalParticipants || 0}
                 </p>
               </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Users className="w-6 h-6 text-blue-600" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 ml-3">
+                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-xl shadow-sm border">
+          <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">
                   Tests Completed
                 </p>
-                <p className="text-3xl font-bold text-green-600">
+                <p className="text-2xl sm:text-3xl font-bold text-green-600">
                   {stats.completedTests || 0}
                 </p>
               </div>
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <CheckCheck className="w-6 h-6 text-green-600" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 ml-3">
+                <CheckCheck className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-xl shadow-sm border">
+          <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Average Age</p>
-                <p className="text-3xl font-bold text-purple-600">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Average Age</p>
+                <p className="text-2xl sm:text-3xl font-bold text-purple-600">
                   {stats.averageAge || 0}
                 </p>
               </div>
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <User className="w-6 h-6 text-purple-600" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0 ml-3">
+                <User className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-xl shadow-sm border">
+          <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">
                   Today's Tests
                 </p>
-                <p className="text-3xl font-bold text-orange-600">
+                <p className="text-2xl sm:text-3xl font-bold text-orange-600">
                   {stats.todaysTests || 0}
                 </p>
               </div>
-              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                <Clock className="w-6 h-6 text-orange-600" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0 ml-3">
+                <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" />
               </div>
             </div>
           </div>
         </div>
 
         {/* Analytics Overview */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
           {/* Test Types Chart */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+          <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">
               Test Completion Breakdown
             </h3>
             <div className="space-y-3">
               {Object.entries(stats.testTypes || {}).map(([testId, count]) => (
                 <div key={testId} className="flex justify-between items-center">
-                  <span className="text-gray-700 capitalize">
+                  <span className="text-gray-700 capitalize text-sm sm:text-base truncate flex-1 mr-3">
                     {testId
                       .replace(/([A-Z])/g, " $1")
                       .replace("Test", "")
                       .trim()}
                   </span>
-                  <div className="flex items-center gap-3">
-                    <div className="w-24 bg-gray-200 rounded-full h-2">
+                  <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                    <div className="w-16 sm:w-24 bg-gray-200 rounded-full h-2">
                       <div
                         className="bg-blue-600 h-2 rounded-full"
                         style={{
@@ -523,7 +526,7 @@ export default function AdminDashboard() {
                         }}
                       ></div>
                     </div>
-                    <span className="font-semibold text-gray-800 min-w-[2rem]">
+                    <span className="font-semibold text-gray-800 min-w-[1.5rem] sm:min-w-[2rem] text-sm sm:text-base">
                       {count}
                     </span>
                   </div>
@@ -533,8 +536,8 @@ export default function AdminDashboard() {
           </div>
 
           {/* Demographics */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+          <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">
               Demographics
             </h3>
             <div className="space-y-4">
@@ -585,83 +588,89 @@ export default function AdminDashboard() {
         {/* Participants Table */}
         <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
           {/* Filter and Export Controls */}
-          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div className="flex items-center gap-4">
-                <h2 className="text-xl font-semibold text-gray-800">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
                   Participants ({participants.length})
                 </h2>
                 
                 {/* Filter Buttons */}
-                <div className="flex items-center gap-2">
-                  <Filter className="w-4 h-4 text-gray-500" />
-                  <div className="flex bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <div className="flex items-center gap-2 overflow-x-auto">
+                  <Filter className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                  <div className="flex bg-white rounded-lg border border-gray-200 overflow-hidden flex-shrink-0">
                     <button
                       onClick={() => setParticipantFilter("all")}
-                      className={`px-3 py-1 text-xs font-medium transition-colors ${
+                      className={`px-2 sm:px-3 py-1 text-xs font-medium transition-colors whitespace-nowrap ${
                         participantFilter === "all"
                           ? "bg-blue-600 text-white"
                           : "text-gray-600 hover:bg-gray-100"
                       }`}
                     >
-                      All ({dashboardData?.participants?.length || 0})
+                      <span className="hidden sm:inline">All ({dashboardData?.participants?.length || 0})</span>
+                      <span className="sm:hidden">All</span>
                     </button>
                     <button
                       onClick={() => setParticipantFilter("research")}
-                      className={`px-3 py-1 text-xs font-medium transition-colors border-l border-gray-200 ${
+                      className={`px-2 sm:px-3 py-1 text-xs font-medium transition-colors border-l border-gray-200 whitespace-nowrap ${
                         participantFilter === "research"
                           ? "bg-blue-600 text-white"
                           : "text-gray-600 hover:bg-gray-100"
                       }`}
                     >
-                      Research ({dashboardData?.participants?.filter(p => p.userType === "research").length || 0})
+                      <span className="hidden sm:inline">Research ({dashboardData?.participants?.filter(p => p.userType === "research").length || 0})</span>
+                      <span className="sm:hidden">Research</span>
                     </button>
                     <button
                       onClick={() => setParticipantFilter("public")}
-                      className={`px-3 py-1 text-xs font-medium transition-colors border-l border-gray-200 ${
+                      className={`px-2 sm:px-3 py-1 text-xs font-medium transition-colors border-l border-gray-200 whitespace-nowrap ${
                         participantFilter === "public"
                           ? "bg-blue-600 text-white"
                           : "text-gray-600 hover:bg-gray-100"
                       }`}
                     >
-                      Public ({dashboardData?.participants?.filter(p => p.userType === "general").length || 0})
+                      <span className="hidden sm:inline">Public ({dashboardData?.participants?.filter(p => p.userType === "general").length || 0})</span>
+                      <span className="sm:hidden">Public</span>
                     </button>
                   </div>
                 </div>
               </div>
 
               {/* Export Buttons */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600 mr-2">Export:</span>
-                <button
-                  onClick={() => exportData("all")}
-                  disabled={isExporting}
-                  className="flex items-center gap-1 px-3 py-1 bg-green-600 text-white text-xs font-medium rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
-                >
-                  <Download className="w-3 h-3" />
-                  All
-                </button>
-                <button
-                  onClick={() => exportData("research")}
-                  disabled={isExporting}
-                  className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
-                >
-                  <Download className="w-3 h-3" />
-                  Research
-                </button>
-                <button
-                  onClick={() => exportData("public")}
-                  disabled={isExporting}
-                  className="flex items-center gap-1 px-3 py-1 bg-purple-600 text-white text-xs font-medium rounded-md hover:bg-purple-700 transition-colors disabled:opacity-50"
-                >
-                  <Download className="w-3 h-3" />
-                  Public
-                </button>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <span className="text-sm text-gray-600">Export:</span>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => exportData("all")}
+                    disabled={isExporting}
+                    className="flex items-center gap-1 px-3 py-1 bg-green-600 text-white text-xs font-medium rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
+                  >
+                    <Download className="w-3 h-3" />
+                    All
+                  </button>
+                  <button
+                    onClick={() => exportData("research")}
+                    disabled={isExporting}
+                    className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+                  >
+                    <Download className="w-3 h-3" />
+                    Research
+                  </button>
+                  <button
+                    onClick={() => exportData("public")}
+                    disabled={isExporting}
+                    className="flex items-center gap-1 px-3 py-1 bg-purple-600 text-white text-xs font-medium rounded-md hover:bg-purple-700 transition-colors disabled:opacity-50"
+                  >
+                    <Download className="w-3 h-3" />
+                    Public
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Desktop Table View */}
+          <div className="hidden lg:block overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
@@ -783,29 +792,127 @@ export default function AdminDashboard() {
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Card View */}
+          <div className="lg:hidden">
+            <div className="space-y-4 p-4">
+              {participants.map((participant, index) => (
+                <div
+                  key={participant.id || index}
+                  className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-sm font-medium text-gray-900 truncate">
+                            {participant.name || "Unknown User"}
+                          </h3>
+                          <p className="text-sm text-gray-500 truncate">
+                            {participant.email || "No email"}
+                          </p>
+                          {participant.participantCode && (
+                            <p className="text-xs text-blue-600 font-mono">
+                              Code: {participant.participantCode}
+                            </p>
+                          )}
+                        </div>
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ml-2 flex-shrink-0 ${
+                            participant.userType === "research"
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-purple-100 text-purple-800"
+                          }`}
+                        >
+                          {participant.userType === "research" ? "Research" : "Public"}
+                        </span>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                        <div className="text-xs text-gray-600">
+                          <span className="font-medium">Age:</span> {participant.age || "N/A"}
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          <span className="font-medium">Gender:</span> {participant.gender || "N/A"}
+                        </div>
+                        <div className="text-xs text-gray-600 sm:col-span-2">
+                          <span className="font-medium">Education:</span>{" "}
+                          {(participant.education || "N/A").replace(/-/g, " ")}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full self-start ${
+                            participant.studyStatus === "completed"
+                              ? "bg-green-100 text-green-800"
+                              : participant.studyStatus === "in-progress"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {(participant.studyStatus || "registered").replace(/-/g, " ")}
+                        </span>
+                        
+                        <div className="text-xs text-gray-600">
+                          <span className="font-medium">Registered:</span>{" "}
+                          {participant.registeredAt
+                            ? new Date(participant.registeredAt).toLocaleDateString()
+                            : "N/A"}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center flex-1">
+                          <span className="text-xs font-medium text-gray-900 mr-2">
+                            {participant.testsCompleted || 0} / 4 tests
+                          </span>
+                          <div className="flex-1 bg-gray-200 rounded-full h-2 max-w-24">
+                            <div
+                              className="bg-blue-600 h-2 rounded-full"
+                              style={{
+                                width: `${((participant.testsCompleted || 0) / 4) * 100}%`,
+                              }}
+                            ></div>
+                          </div>
+                        </div>
+                        
+                        <button
+                          onClick={() => viewParticipantDetails(participant.id)}
+                          className="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700 transition duration-200 text-xs font-medium ml-3"
+                        >
+                          View Details
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </main>
 
       {/* Participant Details Modal */}
       {showModal && selectedParticipant && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden">
             {/* Modal Header */}
-            <div className="flex justify-between items-center p-6 border-b border-gray-200">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-6 border-b border-gray-200 gap-3">
               <div>
-                <h2 className="text-2xl font-bold text-gray-800">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
                   Participant Details
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-gray-600 text-sm sm:text-base">
                   Complete profile and test results
                 </p>
               </div>
               <button
                 onClick={closeModal}
-                className="text-gray-400 hover:text-gray-600 transition duration-200"
+                className="text-gray-400 hover:text-gray-600 transition duration-200 self-end sm:self-auto"
               >
                 <svg
-                  className="w-6 h-6"
+                  className="w-5 h-5 sm:w-6 sm:h-6"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -821,13 +928,13 @@ export default function AdminDashboard() {
             </div>
 
             {/* Modal Content */}
-            <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
-              <div className="p-6 space-y-6">
+            <div className="overflow-y-auto max-h-[calc(95vh-120px)] sm:max-h-[calc(90vh-120px)]">
+              <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
                 {/* Personal Information */}
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4 flex items-center">
                     <svg
-                      className="w-5 h-5 mr-2 text-blue-600"
+                      className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-600"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -841,7 +948,7 @@ export default function AdminDashboard() {
                     </svg>
                     Personal Information
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-600">
                         Name
@@ -937,9 +1044,9 @@ export default function AdminDashboard() {
 
                 {/* Test Progress Summary */}
                 <div className="bg-blue-50 rounded-lg p-4">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4 flex items-center">
                     <svg
-                      className="w-5 h-5 mr-2 text-blue-600"
+                      className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-600"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -953,13 +1060,13 @@ export default function AdminDashboard() {
                     </svg>
                     Test Progress Summary
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-600">
                         Tests Completed
                       </label>
                       <div className="flex items-center mt-1">
-                        <p className="text-2xl font-bold text-blue-600 mr-3">
+                        <p className="text-xl sm:text-2xl font-bold text-blue-600 mr-3">
                           {selectedParticipant.testsCompleted?.length || 0} / 4
                         </p>
                         <div className="flex-1 bg-gray-200 rounded-full h-2">
@@ -1066,7 +1173,7 @@ export default function AdminDashboard() {
                               <h5 className="font-bold text-purple-600 mb-2 text-left">
                                 Performance Metrics
                               </h5>
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                                 {Object.entries(result.metrics).map(
                                   ([key, value]) => (
                                     <div key={key} className="text-center">
@@ -1200,10 +1307,10 @@ export default function AdminDashboard() {
             </div>
 
             {/* Modal Footer */}
-            <div className="flex justify-end items-center p-6 border-t border-gray-200 bg-gray-50">
+            <div className="flex justify-end items-center p-4 sm:p-6 border-t border-gray-200 bg-gray-50">
               <button
                 onClick={closeModal}
-                className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition duration-200"
+                className="bg-gray-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-gray-700 transition duration-200 text-sm sm:text-base"
               >
                 Close
               </button>
