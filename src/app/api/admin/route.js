@@ -215,15 +215,21 @@ export async function POST(request) {
           ? `${testResults.length} test(s) completed`
           : 'No tests completed';
 
-        // Helper function to format detailed test results
+        // Helper function to format detailed test results in readable format
         const formatStroopTestResult = (testResults) => {
           const stroopResult = testResults.find(result => result.testId === 'stroopTest');
           if (!stroopResult || !stroopResult.metrics) return 'Not completed';
           
           const metrics = stroopResult.metrics;
           const completedAt = stroopResult.completedAt || stroopResult.timestamp;
+          const completedDate = completedAt ? new Date(completedAt).toLocaleDateString('en-GB') : 'N/A';
           
-          return `CONTROL: totalTrials=${metrics.control?.totalTrials || 'N/A'}, correctTrials=${metrics.control?.correctTrials || 'N/A'}, accuracy=${metrics.control?.accuracy || 'N/A'}%, avgRT=${metrics.control?.avgRT || 'N/A'}ms | EXPERIMENTAL: totalTrials=${metrics.experimental?.totalTrials || 'N/A'}, correctTrials=${metrics.experimental?.correctTrials || 'N/A'}, accuracy=${metrics.experimental?.accuracy || 'N/A'}%, avgRT=${metrics.experimental?.avgRT || 'N/A'}ms | STROOP EFFECT: ${metrics.stroopEffect || 'N/A'} | TOTAL TRIALS: ${metrics.totalTrials || 'N/A'} | CORRECT TRIALS: ${metrics.correctTrials || 'N/A'} | ACCURACY: ${metrics.accuracy || 'N/A'}% | AVERAGE RT: ${metrics.averageRT || 'N/A'}ms | CONGRUENT RT: ${metrics.congruentRT || 'N/A'}ms | INCONGRUENT RT: ${metrics.incongruentRT || 'N/A'}ms | COMPLETED AT: ${completedAt ? new Date(completedAt).toLocaleDateString('en-GB') : 'N/A'}`;
+          return `Control Trials: ${metrics.control?.totalTrials || 'N/A'} (${metrics.control?.correctTrials || 'N/A'} correct, ${metrics.control?.accuracy || 'N/A'}% accuracy, ${metrics.control?.avgRT || 'N/A'}ms avg RT)
+Experimental Trials: ${metrics.experimental?.totalTrials || 'N/A'} (${metrics.experimental?.correctTrials || 'N/A'} correct, ${metrics.experimental?.accuracy || 'N/A'}% accuracy, ${metrics.experimental?.avgRT || 'N/A'}ms avg RT)
+Stroop Effect: ${metrics.stroopEffect || 'N/A'}ms
+Overall: ${metrics.totalTrials || 'N/A'} trials, ${metrics.correctTrials || 'N/A'} correct (${metrics.accuracy || 'N/A'}% accuracy)
+Response Times: Average ${metrics.averageRT || 'N/A'}ms, Congruent ${metrics.congruentRT || 'N/A'}ms, Incongruent ${metrics.incongruentRT || 'N/A'}ms
+Completed: ${completedDate}`;
         };
 
         const formatTrailMakingTestResult = (testResults) => {
@@ -232,8 +238,12 @@ export async function POST(request) {
           
           const metrics = trailResult.metrics;
           const completedAt = trailResult.completedAt || trailResult.timestamp;
+          const completedDate = completedAt ? new Date(completedAt).toLocaleDateString('en-GB') : 'N/A';
           
-          return `TRIAL A: time=${metrics.trialA?.time || 'N/A'}s, errors=${metrics.trialA?.errors || 'N/A'} | TRIAL B: time=${metrics.trialB?.time || 'N/A'}s, errors=${metrics.trialB?.errors || 'N/A'} | B MINUS A: ${metrics.bMinusA || 'N/A'}s | COMPLETED AT: ${completedAt ? new Date(completedAt).toLocaleDateString('en-GB') : 'N/A'}`;
+          return `Trial A: ${metrics.trialA?.time || 'N/A'} seconds (${metrics.trialA?.errors || 'N/A'} errors)
+Trial B: ${metrics.trialB?.time || 'N/A'} seconds (${metrics.trialB?.errors || 'N/A'} errors)
+B-A Difference: ${metrics.bMinusA || 'N/A'} seconds
+Completed: ${completedDate}`;
         };
 
         const formatCorsiBlocksTestResult = (testResults) => {
@@ -242,8 +252,14 @@ export async function POST(request) {
           
           const metrics = corsiResult.metrics;
           const completedAt = corsiResult.completedAt || corsiResult.timestamp;
+          const completedDate = completedAt ? new Date(completedAt).toLocaleDateString('en-GB') : 'N/A';
           
-          return `FORWARD SPAN: ${metrics.forwardSpan || 'N/A'} | BACKWARD SPAN: ${metrics.backwardSpan || 'N/A'} | TOTAL SPAN: ${metrics.totalSpan || 'N/A'} | FORWARD ACCURACY: ${metrics.forwardAccuracy || 'N/A'}% | BACKWARD ACCURACY: ${metrics.backwardAccuracy || 'N/A'}% | ACCURACY: ${metrics.accuracy || 'N/A'}% | TOTAL TRIALS: ${metrics.totalTrials || 'N/A'} | COMPLETED AT: ${completedAt ? new Date(completedAt).toLocaleDateString('en-GB') : 'N/A'}`;
+          return `Forward Span: ${metrics.forwardSpan || 'N/A'} (${metrics.forwardAccuracy || 'N/A'}% accuracy)
+Backward Span: ${metrics.backwardSpan || 'N/A'} (${metrics.backwardAccuracy || 'N/A'}% accuracy)
+Total Span: ${metrics.totalSpan || 'N/A'}
+Overall Accuracy: ${metrics.accuracy || 'N/A'}%
+Total Trials: ${metrics.totalTrials || 'N/A'}
+Completed: ${completedDate}`;
         };
 
         const formatFivePointsTestResult = (testResults) => {
@@ -252,8 +268,14 @@ export async function POST(request) {
           
           const metrics = fivePointsResult.metrics;
           const completedAt = fivePointsResult.completedAt || fivePointsResult.timestamp;
+          const completedDate = completedAt ? new Date(completedAt).toLocaleDateString('en-GB') : 'N/A';
           
-          return `NEW DESIGNS: ${metrics.newDesigns || 'N/A'} | REPETITIONS: ${metrics.repetitions || 'N/A'} | MISTAKES: ${metrics.mistakes || 'N/A'} | TOTAL DESIGNS: ${metrics.totalDesigns || 'N/A'} | DESIGNS: ${Array.isArray(metrics.designs) ? `Array (${metrics.designs.length} items)` : metrics.designs || 'N/A'} | COMPLETED AT: ${completedAt ? new Date(completedAt).toLocaleDateString('en-GB') : 'N/A'}`;
+          return `New Designs: ${metrics.newDesigns || 'N/A'}
+Repetitions: ${metrics.repetitions || 'N/A'}
+Mistakes: ${metrics.mistakes || 'N/A'}
+Total Designs: ${metrics.totalDesigns || 'N/A'}
+Design Count: ${Array.isArray(metrics.designs) ? metrics.designs.length : 'N/A'} designs recorded
+Completed: ${completedDate}`;
         };
 
         return [
