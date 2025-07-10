@@ -21,16 +21,20 @@ function isTouchDevice() {
 function ArrowKeyboard({ onArrow }) {
   // Responsive on-screen arrow keyboard
   return (
-    <div className="fixed bottom-0 left-0 w-full flex justify-center z-50 bg-white/90 py-3 border-t border-gray-200 md:static md:bg-transparent md:border-0 md:py-0">
-      <div className="flex flex-col items-center space-y-2">
+    <div className="fixed bottom-0 left-0 w-full flex justify-center z-50 bg-white/95 backdrop-blur-sm py-3 border-t border-gray-200 shadow-lg">
+      <div className="flex flex-col items-center space-y-3">
+        {/* Up Arrow */}
         <button
-          aria-label="Up"
+          aria-label="Up Arrow"
           className="arrow-key-btn"
           onClick={() => onArrow("ArrowUp")}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            onArrow("ArrowUp");
+          }}
         >
-          {/* Up Arrow */}
           <svg
-            className="w-10 h-10 text-gray-700"
+            className="w-8 h-8 sm:w-10 sm:h-10 text-gray-700"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -38,20 +42,25 @@ function ArrowKeyboard({ onArrow }) {
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 5l-7 7m7-7l7 7M12 5v14"
+              strokeWidth={3}
+              d="M5 15l7-7 7 7"
             />
           </svg>
         </button>
-        <div className="flex space-x-8">
+        
+        {/* Left and Right Arrows */}
+        <div className="flex space-x-6 sm:space-x-8">
           <button
-            aria-label="Left"
+            aria-label="Left Arrow"
             className="arrow-key-btn"
             onClick={() => onArrow("ArrowLeft")}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              onArrow("ArrowLeft");
+            }}
           >
-            {/* Left Arrow */}
             <svg
-              className="w-10 h-10 text-gray-700"
+              className="w-8 h-8 sm:w-10 sm:h-10 text-gray-700"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -59,19 +68,23 @@ function ArrowKeyboard({ onArrow }) {
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 12l7-7m-7 7l7 7M5 12h14"
+                strokeWidth={3}
+                d="M15 19l-7-7 7-7"
               />
             </svg>
           </button>
+          
           <button
-            aria-label="Right"
+            aria-label="Right Arrow"
             className="arrow-key-btn"
             onClick={() => onArrow("ArrowRight")}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              onArrow("ArrowRight");
+            }}
           >
-            {/* Right Arrow */}
             <svg
-              className="w-10 h-10 text-gray-700"
+              className="w-8 h-8 sm:w-10 sm:h-10 text-gray-700"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -79,20 +92,25 @@ function ArrowKeyboard({ onArrow }) {
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 12l-7-7m7 7l-7 7M19 12H5"
+                strokeWidth={3}
+                d="M9 5l7 7-7 7"
               />
             </svg>
           </button>
         </div>
+        
+        {/* Down Arrow */}
         <button
-          aria-label="Down"
+          aria-label="Down Arrow"
           className="arrow-key-btn"
           onClick={() => onArrow("ArrowDown")}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            onArrow("ArrowDown");
+          }}
         >
-          {/* Down Arrow */}
           <svg
-            className="w-10 h-10 text-gray-700"
+            className="w-8 h-8 sm:w-10 sm:h-10 text-gray-700"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -100,28 +118,58 @@ function ArrowKeyboard({ onArrow }) {
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 19l-7-7m7 7l7-7M12 19V5"
+              strokeWidth={3}
+              d="M19 9l-7 7-7-7"
             />
           </svg>
         </button>
       </div>
+      
       <style jsx>{`
         .arrow-key-btn {
-          background: #f3f4f6;
-          border-radius: 0.75rem;
-          padding: 0.5rem 1.25rem;
+          background: #f8fafc;
+          border-radius: 1rem;
+          padding: 0.75rem 1rem;
           margin: 0 0.25rem;
-          border: 1px solid #e5e7eb;
-          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-          transition: background 0.2s;
+          border: 2px solid #e2e8f0;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+          transition: all 0.15s ease;
+          min-width: 3.5rem;
+          min-height: 3.5rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          user-select: none;
+          -webkit-user-select: none;
+          -webkit-tap-highlight-color: transparent;
         }
-        .arrow-key-btn:active {
+        
+        .arrow-key-btn:active,
+        .arrow-key-btn:focus {
           background: #e0e7ff;
+          border-color: #6366f1;
+          transform: scale(0.95);
+          outline: none;
         }
-        @media (min-width: 768px) {
+        
+        .arrow-key-btn:hover {
+          background: #f1f5f9;
+          border-color: #cbd5e1;
+        }
+        
+        @media (min-width: 640px) {
           .arrow-key-btn {
-            padding: 0.5rem 1.5rem;
+            padding: 1rem 1.25rem;
+            min-width: 4rem;
+            min-height: 4rem;
+          }
+        }
+        
+        @media (max-width: 480px) {
+          .arrow-key-btn {
+            padding: 0.5rem 0.75rem;
+            min-width: 3rem;
+            min-height: 3rem;
           }
         }
       `}</style>
@@ -317,17 +365,33 @@ export default function StroopTest({
 
     // Professional CSS using global variables
     const stroopCSS = `
+      body, html {
+        overflow-x: hidden;
+        box-sizing: border-box;
+      }
+      
+      * {
+        box-sizing: border-box;
+      }
+      
       .jspsych-content {
-        max-width: 1000px;
+        max-width: min(1000px, 100vw);
         margin: 0 auto;
         font-family: var(--font-sans);
         box-sizing: border-box;
+        padding: 0 10px;
+      }
+      
+      @media (max-width: 600px) {
+        .jspsych-content {
+          padding: 0 5px;
+        }
       }
       
       .stroop-container {
         position: relative;
-        width: 800px;
-        height: 500px;
+        width: min(calc(100vw - 40px), 800px);
+        height: min(60vh, 500px);
         background: linear-gradient(135deg, var(--card) 0%, var(--muted) 100%);
         margin: 20px auto;
         border-radius: var(--radius-xl);
@@ -343,46 +407,30 @@ export default function StroopTest({
       /* Responsive styles for .stroop-container */
       @media (max-width: 900px) {
         .stroop-container {
-          width: 95vw;
-          height: 50vw;
-          min-height: 260px;
-          max-width: 98vw;
+          width: calc(100vw - 30px);
+          height: min(55vh, 450px);
+          min-height: 300px;
+          margin: 15px auto;
         }
       }
+      
       @media (max-width: 600px) {
         .stroop-container {
-          width: 100vw;
-          left: 50%;
-          transform: translateX(-50%);
-          height: 48vw;
-          min-height: 180px;
-          max-width: 100vw;
-          padding: 0;
-          border-radius: 0;
-          margin: 0;
-          overflow-x: hidden;
-        }
-        .jspsych-content {
-          padding: 0 !important;
-          margin: 0 !important;
-          max-width: 100vw !important;
-          overflow-x: hidden !important;
-        }
-        html, body {
-          overflow-x: hidden !important;
+          width: calc(100vw - 20px);
+          height: min(50vh, 400px);
+          min-height: 250px;
+          margin: 10px auto;
+          border-width: 1px;
         }
       }
-      @media (max-width: 480px) {
+      
+      @media (max-width: 400px) {
         .stroop-container {
-          width: 100vw;
-          height: 60vw;
-          min-height: 120px;
-          max-width: 100vw;
-          border-radius: 0;
-          left: 50%;
-          transform: translateX(-50%);
-          margin: 0;
-          overflow-x: hidden;
+          width: calc(100vw - 16px);
+          height: min(45vh, 350px);
+          min-height: 200px;
+          margin: 8px auto;
+          border-width: 1px;
         }
       }
       
@@ -405,23 +453,56 @@ export default function StroopTest({
         .arrow-stimulus { font-size: 16vw; }
       }
       
-      .arrow-left { position: absolute; left: 12%; }
-      .arrow-right { position: absolute; right: 12%; }
-      .arrow-up { position: absolute; top: 12%; left: 50%; transform: translateX(-50%); }
-      .arrow-down { position: absolute; bottom: 12%; left: 50%; transform: translateX(-50%); }
-      .arrow-center { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+      .arrow-left { 
+        position: absolute; 
+        left: min(12%, 80px);
+        top: 50%; 
+        transform: translateY(-50%);
+      }
+      .arrow-right { 
+        position: absolute; 
+        right: min(12%, 80px);
+        top: 50%; 
+        transform: translateY(-50%);
+      }
+      .arrow-up { 
+        position: absolute; 
+        top: min(12%, 60px);
+        left: 50%; 
+        transform: translateX(-50%);
+      }
+      .arrow-down { 
+        position: absolute; 
+        bottom: min(12%, 60px);
+        left: 50%; 
+        transform: translateX(-50%);
+      }
+      .arrow-center { 
+        position: absolute; 
+        left: 50%; 
+        top: 50%; 
+        transform: translate(-50%, -50%);
+      }
       
       @media (max-width: 900px) {
-        .arrow-left { left: 7%; }
-        .arrow-right { right: 7%; }
-        .arrow-up { top: 7%; }
-        .arrow-down { bottom: 7%; }
+        .arrow-left { left: min(8%, 50px); }
+        .arrow-right { right: min(8%, 50px); }
+        .arrow-up { top: min(8%, 40px); }
+        .arrow-down { bottom: min(8%, 40px); }
       }
+      
       @media (max-width: 600px) {
-        .arrow-left { left: 4%; }
-        .arrow-right { right: 4%; }
-        .arrow-up { top: 4%; }
-        .arrow-down { bottom: 4%; }
+        .arrow-left { left: min(6%, 30px); }
+        .arrow-right { right: min(6%, 30px); }
+        .arrow-up { top: min(6%, 25px); }
+        .arrow-down { bottom: min(6%, 25px); }
+      }
+      
+      @media (max-width: 400px) {
+        .arrow-left { left: min(4%, 20px); }
+        .arrow-right { right: min(4%, 20px); }
+        .arrow-up { top: min(4%, 15px); }
+        .arrow-down { bottom: min(4%, 15px); }
       }
       
       .phase-badge {
@@ -479,46 +560,7 @@ export default function StroopTest({
         .fixation-cross { font-size: 8vw; }
       }
       
-      .arrow-stimulus {
-        font-size: 120px;
-        font-weight: 900;
-        color: var(--foreground);
-        text-shadow: 0 4px 8px hsl(var(--foreground) / 0.3);
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        user-select: none;
-        font-family: var(--font-mono);
-      }
-      
-      .arrow-left {
-        position: absolute;
-        left: 100px;
-      }
-      
-      .arrow-right {
-        position: absolute;
-        right: 100px;
-      }
-      
-      .arrow-up {
-        position: absolute;
-        top: 80px;
-        left: 50%;
-        transform: translateX(-50%);
-      }
-      
-      .arrow-down {
-        position: absolute;
-        bottom: 80px;
-        left: 50%;
-        transform: translateX(-50%);
-      }
-      
-      .arrow-center {
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-      }
+
       
       .stroop-header {
         text-align: center;
@@ -1402,59 +1444,74 @@ export default function StroopTest({
 
   // Arrow key event handler for on-screen keyboard
   const handleArrowKey = (arrow) => {
-    // console.log("DETECTED KEY :", arrow);
-    // Create a real KeyboardEvent with all properties
+    console.log("Virtual arrow key pressed:", arrow);
+    
+    // Create proper keyboard events
     const keyMap = {
-      ArrowUp: {
-        key: "ArrowUp",
-        code: "ArrowUp",
-        keyCode: 38,
-        which: 38,
-        bubbles: true,
-        cancelable: true,
-      },
-      ArrowDown: {
-        key: "ArrowDown",
-        code: "ArrowDown",
-        keyCode: 40,
-        which: 40,
-        bubbles: true,
-        cancelable: true,
-      },
-      ArrowLeft: {
-        key: "ArrowLeft",
-        code: "ArrowLeft",
-        keyCode: 37,
-        which: 37,
-        bubbles: true,
-        cancelable: true,
-      },
-      ArrowRight: {
-        key: "ArrowRight",
-        code: "ArrowRight",
-        keyCode: 39,
-        which: 39,
-        bubbles: true,
-        cancelable: true,
-      },
+      ArrowUp: { key: "ArrowUp", code: "ArrowUp", keyCode: 38, which: 38 },
+      ArrowDown: { key: "ArrowDown", code: "ArrowDown", keyCode: 40, which: 40 },
+      ArrowLeft: { key: "ArrowLeft", code: "ArrowLeft", keyCode: 37, which: 37 },
+      ArrowRight: { key: "ArrowRight", code: "ArrowRight", keyCode: 39, which: 39 },
     };
-    const props = keyMap[arrow] || { key: arrow };
-    const event = new KeyboardEvent("keydown", {
-      key: props.key,
-      code: props.code,
-      keyCode: props.keyCode,
-      which: props.which,
-      bubbles: true,
-      cancelable: true,
+
+    const keyProps = keyMap[arrow];
+    if (!keyProps) return;
+
+    // Create keyboard events with all necessary properties
+    const createKeyEvent = (type) => {
+      const event = new KeyboardEvent(type, {
+        key: keyProps.key,
+        code: keyProps.code,
+        keyCode: keyProps.keyCode,
+        which: keyProps.which,
+        bubbles: true,
+        cancelable: true,
+        view: window
+      });
+      
+      // Ensure keyCode and which are properly set for all browsers
+      Object.defineProperty(event, 'keyCode', { 
+        value: keyProps.keyCode, 
+        writable: false 
+      });
+      Object.defineProperty(event, 'which', { 
+        value: keyProps.which, 
+        writable: false 
+      });
+      
+      return event;
+    };
+
+    // Dispatch events to key targets in the correct order
+    const keydownEvent = createKeyEvent('keydown');
+    const keyupEvent = createKeyEvent('keyup');
+
+    // Primary targets for jsPsych event handling
+    const targets = [
+      document.body,
+      document,
+      document.getElementById('jspsych-target')
+    ].filter(Boolean);
+
+    // Dispatch keydown immediately
+    targets.forEach(target => {
+      try {
+        target.dispatchEvent(keydownEvent.constructor === KeyboardEvent ? keydownEvent : createKeyEvent('keydown'));
+      } catch (error) {
+        console.log("Keydown dispatch failed:", error);
+      }
     });
-    // console.log("EVENT :", event);
-    // Hack: define keyCode/which for browsers that don't set them
-    Object.defineProperty(event, "keyCode", { get: () => props.keyCode });
-    Object.defineProperty(event, "which", { get: () => props.which });
-    // Dispatch to jspsych-target and document
-    const jspsychTarget = document.getElementById("jspsych-target");
-    if (jspsychTarget) jspsychTarget.dispatchEvent(event);
-    document.dispatchEvent(event);
+
+    // Dispatch keyup after short delay
+    setTimeout(() => {
+      targets.forEach(target => {
+        try {
+          target.dispatchEvent(keyupEvent.constructor === KeyboardEvent ? keyupEvent : createKeyEvent('keyup'));
+        } catch (error) {
+          console.log("Keyup dispatch failed:", error);
+        }
+      });
+    }, 50);
   };
 
   if (status === "results" && (results || showResults)) {
@@ -1484,17 +1541,17 @@ export default function StroopTest({
   return (
     <div className="flex flex-col items-center justify-center py-6 sm:py-12">
       {status === "instructions" && (
-        <div className="bg-white rounded-xl shadow-xl p-4 sm:p-8 max-w-5xl w-full">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-gray-800 mb-4">
+        <div className="bg-white rounded-xl shadow-xl p-4 sm:p-6 lg:p-8 max-w-5xl w-full mx-4">
+          <div className="text-center mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800 mb-3 sm:mb-4">
               Visual Stroop Test
             </h1>
-            <p className="text-xl text-gray-600">
+            <p className="text-lg sm:text-xl text-gray-600">
               A test of cognitive flexibility and selective attention
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
             <div className="space-y-6">
               <div>
                 <h2 className="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
@@ -1563,6 +1620,7 @@ export default function StroopTest({
                   <li>
                     Use keyboard arrow keys: ← for left, → for right, ↑ for up,
                     ↓ for down
+                    {isTouchDevice() && " (Virtual keyboard will appear on mobile)"}
                   </li>
                   <li>Respond as quickly and accurately as possible</li>
                   <li>The test includes tutorial and practice trials</li>
@@ -1575,7 +1633,7 @@ export default function StroopTest({
                 Test Structure
               </h2>
 
-              <div className="mt-6 p-6 bg-pink-50 rounded-lg w-full max-w-sm">
+              <div className="mt-6 p-4 sm:p-6 bg-pink-50 rounded-lg w-full max-w-sm mx-auto">
                 <h3 className="font-semibold text-pink-800 mb-4 text-center">
                   Two Phases:
                 </h3>
@@ -1609,10 +1667,10 @@ export default function StroopTest({
             </div>
           </div>
 
-          <div className="flex justify-center mt-8">
+          <div className="flex justify-center mt-6 sm:mt-8">
             <button
               onClick={startTest}
-              className="bg-accent cursor-pointer text-white px-10 py-4 rounded-lg text-lg font-semibold hover:from-pink-700 hover:to-red-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="bg-accent hover:bg-accent/90 cursor-pointer text-white px-8 sm:px-10 py-3 sm:py-4 rounded-lg text-base sm:text-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
             >
               Start Test
             </button>
@@ -1622,8 +1680,15 @@ export default function StroopTest({
 
       {status === "running" && (
         <>
-          <div id="jspsych-target" ref={jspsychTargetRef} className="w-full" />
-          {showArrowKeyboard && <ArrowKeyboard onArrow={handleArrowKey} />}
+          <div id="jspsych-target" ref={jspsychTargetRef} className="" />
+          {showArrowKeyboard && (
+            <>
+              <div className="fixed top-4 right-4 z-40 bg-blue-100 border border-blue-300 rounded-lg px-3 py-2 text-sm text-blue-800 md:hidden">
+                Virtual keyboard active
+              </div>
+              <ArrowKeyboard onArrow={handleArrowKey} />
+            </>
+          )}
         </>
       )}
 
