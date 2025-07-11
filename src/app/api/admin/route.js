@@ -138,9 +138,11 @@ export async function POST(request) {
         return generateConsistentAnonymousId(participant);
       };
 
-      // Create comprehensive CSV headers
+      // Create comprehensive CSV headers with individual columns for each test metric
       const csvHeaders = [
         'Anonymous ID',
+        'Full Name',
+        'Email',
         'User Type', 
         'Participant Code',
         'Age',
@@ -158,10 +160,46 @@ export async function POST(request) {
         'Study Progress (%)',
         'Days Since Registration',
         'Test Results Summary',
-        'StroopTest_result',
-        'TrailMakingTest_Result',
-        'CorsiBlocksTest_result',
-        'FivePointsTest_results'
+        // Stroop Test individual columns
+        'Stroop_Completed_Date',
+        'Stroop_Total_Trials',
+        'Stroop_Correct_Trials',
+        'Stroop_Overall_Accuracy_Percent',
+        'Stroop_Average_RT_ms',
+        'Stroop_Control_Trials',
+        'Stroop_Control_Correct',
+        'Stroop_Control_Accuracy_Percent',
+        'Stroop_Control_Avg_RT_ms',
+        'Stroop_Experimental_Trials',
+        'Stroop_Experimental_Correct',
+        'Stroop_Experimental_Accuracy_Percent',
+        'Stroop_Experimental_Avg_RT_ms',
+        'Stroop_Effect_ms',
+        'Stroop_Congruent_RT_ms',
+        'Stroop_Incongruent_RT_ms',
+        // Trail Making Test individual columns
+        'TrailMaking_Completed_Date',
+        'TrailMaking_A_Time_seconds',
+        'TrailMaking_A_Errors',
+        'TrailMaking_B_Time_seconds',
+        'TrailMaking_B_Errors',
+        'TrailMaking_B_minus_A_seconds',
+        // Corsi Blocks Test individual columns
+        'Corsi_Completed_Date',
+        'Corsi_Forward_Span',
+        'Corsi_Forward_Accuracy_Percent',
+        'Corsi_Backward_Span',
+        'Corsi_Backward_Accuracy_Percent',
+        'Corsi_Total_Span',
+        'Corsi_Overall_Accuracy_Percent',
+        'Corsi_Total_Trials',
+        // Five Points Test individual columns
+        'FivePoints_Completed_Date',
+        'FivePoints_New_Designs',
+        'FivePoints_Repetitions',
+        'FivePoints_Mistakes',
+        'FivePoints_Total_Designs',
+        'FivePoints_Designs_Recorded_Count'
       ];
 
       // Map participants to CSV rows with proper formatting
@@ -215,71 +253,16 @@ export async function POST(request) {
           ? `${testResults.length} test(s) completed`
           : 'No tests completed';
 
-        // Helper function to format detailed test results in readable format
-        const formatStroopTestResult = (testResults) => {
-          const stroopResult = testResults.find(result => result.testId === 'stroopTest');
-          if (!stroopResult || !stroopResult.metrics) return 'Not completed';
-          
-          const metrics = stroopResult.metrics;
-          const completedAt = stroopResult.completedAt || stroopResult.timestamp;
-          const completedDate = completedAt ? new Date(completedAt).toLocaleDateString('en-GB') : 'N/A';
-          
-          return `Control Trials: ${metrics.control?.totalTrials || 'N/A'} (${metrics.control?.correctTrials || 'N/A'} correct, ${metrics.control?.accuracy || 'N/A'}% accuracy, ${metrics.control?.avgRT || 'N/A'}ms avg RT)
-Experimental Trials: ${metrics.experimental?.totalTrials || 'N/A'} (${metrics.experimental?.correctTrials || 'N/A'} correct, ${metrics.experimental?.accuracy || 'N/A'}% accuracy, ${metrics.experimental?.avgRT || 'N/A'}ms avg RT)
-Stroop Effect: ${metrics.stroopEffect || 'N/A'}ms
-Overall: ${metrics.totalTrials || 'N/A'} trials, ${metrics.correctTrials || 'N/A'} correct (${metrics.accuracy || 'N/A'}% accuracy)
-Response Times: Average ${metrics.averageRT || 'N/A'}ms, Congruent ${metrics.congruentRT || 'N/A'}ms, Incongruent ${metrics.incongruentRT || 'N/A'}ms
-Completed: ${completedDate}`;
-        };
-
-        const formatTrailMakingTestResult = (testResults) => {
-          const trailResult = testResults.find(result => result.testId === 'trailMakingTest');
-          if (!trailResult || !trailResult.metrics) return 'Not completed';
-          
-          const metrics = trailResult.metrics;
-          const completedAt = trailResult.completedAt || trailResult.timestamp;
-          const completedDate = completedAt ? new Date(completedAt).toLocaleDateString('en-GB') : 'N/A';
-          
-          return `Trial A: ${metrics.trialA?.time || 'N/A'} seconds (${metrics.trialA?.errors || 'N/A'} errors)
-Trial B: ${metrics.trialB?.time || 'N/A'} seconds (${metrics.trialB?.errors || 'N/A'} errors)
-B-A Difference: ${metrics.bMinusA || 'N/A'} seconds
-Completed: ${completedDate}`;
-        };
-
-        const formatCorsiBlocksTestResult = (testResults) => {
-          const corsiResult = testResults.find(result => result.testId === 'corsiBlocksTest');
-          if (!corsiResult || !corsiResult.metrics) return 'Not completed';
-          
-          const metrics = corsiResult.metrics;
-          const completedAt = corsiResult.completedAt || corsiResult.timestamp;
-          const completedDate = completedAt ? new Date(completedAt).toLocaleDateString('en-GB') : 'N/A';
-          
-          return `Forward Span: ${metrics.forwardSpan || 'N/A'} (${metrics.forwardAccuracy || 'N/A'}% accuracy)
-Backward Span: ${metrics.backwardSpan || 'N/A'} (${metrics.backwardAccuracy || 'N/A'}% accuracy)
-Total Span: ${metrics.totalSpan || 'N/A'}
-Overall Accuracy: ${metrics.accuracy || 'N/A'}%
-Total Trials: ${metrics.totalTrials || 'N/A'}
-Completed: ${completedDate}`;
-        };
-
-        const formatFivePointsTestResult = (testResults) => {
-          const fivePointsResult = testResults.find(result => result.testId === 'fivePointsTest');
-          if (!fivePointsResult || !fivePointsResult.metrics) return 'Not completed';
-          
-          const metrics = fivePointsResult.metrics;
-          const completedAt = fivePointsResult.completedAt || fivePointsResult.timestamp;
-          const completedDate = completedAt ? new Date(completedAt).toLocaleDateString('en-GB') : 'N/A';
-          
-          return `New Designs: ${metrics.newDesigns || 'N/A'}
-Repetitions: ${metrics.repetitions || 'N/A'}
-Mistakes: ${metrics.mistakes || 'N/A'}
-Total Designs: ${metrics.totalDesigns || 'N/A'}
-Design Count: ${Array.isArray(metrics.designs) ? metrics.designs.length : 'N/A'} designs recorded
-Completed: ${completedDate}`;
-        };
+        // Extract individual test results for CSV columns
+        const stroopResult = testResults.find(result => result.testId === 'stroopTest');
+        const trailResult = testResults.find(result => result.testId === 'trailMakingTest');
+        const corsiResult = testResults.find(result => result.testId === 'corsiBlocksTest');
+        const fivePointsResult = testResults.find(result => result.testId === 'fivePointsTest');
 
         return [
           generateAnonymousId(participant, index),
+          participant.firstName + " " + participant.lastName,
+          participant.email || 'N/A',
           participant.userType === 'research' ? 'Research Participant' : 'Public Participant',
           participant.participantCode || 'N/A',
           participant.age || '',
@@ -297,10 +280,46 @@ Completed: ${completedDate}`;
           `${progressPercentage}%`,
           daysSinceRegistration,
           testResultsSummary,
-          formatStroopTestResult(testResults),
-          formatTrailMakingTestResult(testResults),
-          formatCorsiBlocksTestResult(testResults),
-          formatFivePointsTestResult(testResults)
+          // Stroop Test individual columns
+          formatDate(stroopResult?.completedAt || stroopResult?.timestamp),
+          stroopResult?.metrics?.totalTrials || 'N/A',
+          stroopResult?.metrics?.correctTrials || 'N/A',
+          stroopResult?.metrics?.accuracy || 'N/A',
+          stroopResult?.metrics?.averageRT || 'N/A',
+          stroopResult?.metrics?.control?.totalTrials || 'N/A',
+          stroopResult?.metrics?.control?.correctTrials || 'N/A',
+          stroopResult?.metrics?.control?.accuracy || 'N/A',
+          stroopResult?.metrics?.control?.avgRT || 'N/A',
+          stroopResult?.metrics?.experimental?.totalTrials || 'N/A',
+          stroopResult?.metrics?.experimental?.correctTrials || 'N/A',
+          stroopResult?.metrics?.experimental?.accuracy || 'N/A',
+          stroopResult?.metrics?.experimental?.avgRT || 'N/A',
+          stroopResult?.metrics?.stroopEffect || 'N/A',
+          stroopResult?.metrics?.congruentRT || 'N/A',
+          stroopResult?.metrics?.incongruentRT || 'N/A',
+          // Trail Making Test individual columns
+          formatDate(trailResult?.completedAt || trailResult?.timestamp),
+          trailResult?.metrics?.trialA?.time || 'N/A',
+          trailResult?.metrics?.trialA?.errors || 'N/A',
+          trailResult?.metrics?.trialB?.time || 'N/A',
+          trailResult?.metrics?.trialB?.errors || 'N/A',
+          trailResult?.metrics?.bMinusA || 'N/A',
+          // Corsi Blocks Test individual columns
+          formatDate(corsiResult?.completedAt || corsiResult?.timestamp),
+          corsiResult?.metrics?.forwardSpan || 'N/A',
+          corsiResult?.metrics?.forwardAccuracy || 'N/A',
+          corsiResult?.metrics?.backwardSpan || 'N/A',
+          corsiResult?.metrics?.backwardAccuracy || 'N/A',
+          corsiResult?.metrics?.totalSpan || 'N/A',
+          corsiResult?.metrics?.accuracy || 'N/A',
+          corsiResult?.metrics?.totalTrials || 'N/A',
+          // Five Points Test individual columns
+          formatDate(fivePointsResult?.completedAt || fivePointsResult?.timestamp),
+          fivePointsResult?.metrics?.newDesigns || 'N/A',
+          fivePointsResult?.metrics?.repetitions || 'N/A',
+          fivePointsResult?.metrics?.mistakes || 'N/A',
+          fivePointsResult?.metrics?.totalDesigns || 'N/A',
+          fivePointsResult?.metrics?.designs?.length || 'N/A'
         ].map(escapeCSVField);
       });
 
