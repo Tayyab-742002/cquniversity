@@ -2,7 +2,7 @@ import { Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import MainLayout from "@/components/layout/MainLayout";
-
+import { Analytics } from "@vercel/analytics/next";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
@@ -35,7 +35,10 @@ export default function RootLayout({ children }) {
         </head>
         <body className={inter.className}>
           <div className="min-h-screen bg-background">
-            <MainLayout>{children}</MainLayout>
+            <MainLayout>
+              {children}
+              <Analytics />
+            </MainLayout>
           </div>
         </body>
       </html>

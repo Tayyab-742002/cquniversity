@@ -47,7 +47,7 @@ function ArrowKeyboard({ onArrow }) {
             />
           </svg>
         </button>
-        
+
         {/* Left and Right Arrows */}
         <div className="flex space-x-6 sm:space-x-8">
           <button
@@ -73,7 +73,7 @@ function ArrowKeyboard({ onArrow }) {
               />
             </svg>
           </button>
-          
+
           <button
             aria-label="Right Arrow"
             className="arrow-key-btn"
@@ -98,7 +98,7 @@ function ArrowKeyboard({ onArrow }) {
             </svg>
           </button>
         </div>
-        
+
         {/* Down Arrow */}
         <button
           aria-label="Down Arrow"
@@ -124,7 +124,7 @@ function ArrowKeyboard({ onArrow }) {
           </svg>
         </button>
       </div>
-      
+
       <style jsx>{`
         .arrow-key-btn {
           background: #f8fafc;
@@ -132,7 +132,8 @@ function ArrowKeyboard({ onArrow }) {
           padding: 0.75rem 1rem;
           margin: 0 0.25rem;
           border: 2px solid #e2e8f0;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+            0 2px 4px -1px rgba(0, 0, 0, 0.06);
           transition: all 0.15s ease;
           min-width: 3.5rem;
           min-height: 3.5rem;
@@ -143,7 +144,7 @@ function ArrowKeyboard({ onArrow }) {
           -webkit-user-select: none;
           -webkit-tap-highlight-color: transparent;
         }
-        
+
         .arrow-key-btn:active,
         .arrow-key-btn:focus {
           background: #e0e7ff;
@@ -151,12 +152,12 @@ function ArrowKeyboard({ onArrow }) {
           transform: scale(0.95);
           outline: none;
         }
-        
+
         .arrow-key-btn:hover {
           background: #f1f5f9;
           border-color: #cbd5e1;
         }
-        
+
         @media (min-width: 640px) {
           .arrow-key-btn {
             padding: 1rem 1.25rem;
@@ -164,7 +165,7 @@ function ArrowKeyboard({ onArrow }) {
             min-height: 4rem;
           }
         }
-        
+
         @media (max-width: 480px) {
           .arrow-key-btn {
             padding: 0.5rem 0.75rem;
@@ -1445,13 +1446,28 @@ export default function StroopTest({
   // Arrow key event handler for on-screen keyboard
   const handleArrowKey = (arrow) => {
     console.log("Virtual arrow key pressed:", arrow);
-    
+
     // Create proper keyboard events
     const keyMap = {
       ArrowUp: { key: "ArrowUp", code: "ArrowUp", keyCode: 38, which: 38 },
-      ArrowDown: { key: "ArrowDown", code: "ArrowDown", keyCode: 40, which: 40 },
-      ArrowLeft: { key: "ArrowLeft", code: "ArrowLeft", keyCode: 37, which: 37 },
-      ArrowRight: { key: "ArrowRight", code: "ArrowRight", keyCode: 39, which: 39 },
+      ArrowDown: {
+        key: "ArrowDown",
+        code: "ArrowDown",
+        keyCode: 40,
+        which: 40,
+      },
+      ArrowLeft: {
+        key: "ArrowLeft",
+        code: "ArrowLeft",
+        keyCode: 37,
+        which: 37,
+      },
+      ArrowRight: {
+        key: "ArrowRight",
+        code: "ArrowRight",
+        keyCode: 39,
+        which: 39,
+      },
     };
 
     const keyProps = keyMap[arrow];
@@ -1466,37 +1482,41 @@ export default function StroopTest({
         which: keyProps.which,
         bubbles: true,
         cancelable: true,
-        view: window
+        view: window,
       });
-      
+
       // Ensure keyCode and which are properly set for all browsers
-      Object.defineProperty(event, 'keyCode', { 
-        value: keyProps.keyCode, 
-        writable: false 
+      Object.defineProperty(event, "keyCode", {
+        value: keyProps.keyCode,
+        writable: false,
       });
-      Object.defineProperty(event, 'which', { 
-        value: keyProps.which, 
-        writable: false 
+      Object.defineProperty(event, "which", {
+        value: keyProps.which,
+        writable: false,
       });
-      
+
       return event;
     };
 
     // Dispatch events to key targets in the correct order
-    const keydownEvent = createKeyEvent('keydown');
-    const keyupEvent = createKeyEvent('keyup');
+    const keydownEvent = createKeyEvent("keydown");
+    const keyupEvent = createKeyEvent("keyup");
 
     // Primary targets for jsPsych event handling
     const targets = [
       document.body,
       document,
-      document.getElementById('jspsych-target')
+      document.getElementById("jspsych-target"),
     ].filter(Boolean);
 
     // Dispatch keydown immediately
-    targets.forEach(target => {
+    targets.forEach((target) => {
       try {
-        target.dispatchEvent(keydownEvent.constructor === KeyboardEvent ? keydownEvent : createKeyEvent('keydown'));
+        target.dispatchEvent(
+          keydownEvent.constructor === KeyboardEvent
+            ? keydownEvent
+            : createKeyEvent("keydown")
+        );
       } catch (error) {
         console.log("Keydown dispatch failed:", error);
       }
@@ -1504,9 +1524,13 @@ export default function StroopTest({
 
     // Dispatch keyup after short delay
     setTimeout(() => {
-      targets.forEach(target => {
+      targets.forEach((target) => {
         try {
-          target.dispatchEvent(keyupEvent.constructor === KeyboardEvent ? keyupEvent : createKeyEvent('keyup'));
+          target.dispatchEvent(
+            keyupEvent.constructor === KeyboardEvent
+              ? keyupEvent
+              : createKeyEvent("keyup")
+          );
         } catch (error) {
           console.log("Keyup dispatch failed:", error);
         }
@@ -1620,7 +1644,8 @@ export default function StroopTest({
                   <li>
                     Use keyboard arrow keys: ← for left, → for right, ↑ for up,
                     ↓ for down
-                    {isTouchDevice() && " (Virtual keyboard will appear on mobile)"}
+                    {isTouchDevice() &&
+                      " (Virtual keyboard will appear on mobile)"}
                   </li>
                   <li>Respond as quickly and accurately as possible</li>
                   <li>The test includes tutorial and practice trials</li>
