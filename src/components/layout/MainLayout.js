@@ -1,4 +1,4 @@
-'use client'
+"use client";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
@@ -12,8 +12,17 @@ export default function MainLayout({ children }) {
         <div className="container mx-auto px-4 flex flex-col md:flex-row md:justify-between md:items-center relative">
           {/* Logo section */}
           <div className="flex items-center justify-between w-full md:w-auto">
-            <Link href="/" className="text-xl font-bold flex items-center space-x-2">
-              <Image src="/logo.png" alt="CQUniversity" width={48} height={48} className="w-10 h-10 md:w-[70px] md:h-[70px]" />
+            <Link
+              href="/"
+              className="text-xl font-bold flex items-center space-x-2"
+            >
+              <Image
+                src="/logo.png"
+                alt="CQUniversity"
+                width={48}
+                height={48}
+                className="w-10 h-10 md:w-[70px] md:h-[70px]"
+              />
               <Image
                 src="/logotext.png"
                 alt="CQUniversity"
@@ -25,7 +34,9 @@ export default function MainLayout({ children }) {
             {/* Hamburger menu for mobile */}
             <button
               className="md:hidden ml-2 p-2 rounded focus:outline-none focus:ring-2 focus:ring-accent"
-              aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-label={
+                menuOpen ? "Close navigation menu" : "Open navigation menu"
+              }
               onClick={() => setMenuOpen((open) => !open)}
             >
               <svg
@@ -125,8 +136,16 @@ export default function MainLayout({ children }) {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
-              <Link href="/" className="text-xl font-bold flex items-center mb-4">
-                <Image src="/logo.png" alt="CQUniversity" width={70} height={70} />
+              <Link
+                href="/"
+                className="text-xl font-bold flex items-center mb-4"
+              >
+                <Image
+                  src="/logo.png"
+                  alt="CQUniversity"
+                  width={70}
+                  height={70}
+                />
                 <Image
                   src="/logotext.png"
                   alt="CQUniversity"
@@ -185,6 +204,23 @@ export default function MainLayout({ children }) {
           <div className="mt-8 pt-4 border-t border-border text-center text-muted-foreground text-sm">
             &copy; {new Date().getFullYear()} CQUniversity - Psychological
             Research Platform
+          </div>
+          <div className="flex mt-10 items-center justify-center gap-2 text-xs">
+            Powered By
+            <a
+              href="https://solvspot.com"
+              target="_blank"
+              className="flex items-center "
+            >
+              <Image
+                src={"/solvspot.png"}
+                alt="Solvspot"
+                width={100}
+                height={100}
+                className="w-4 h-4"
+              />
+              <span className="text-[#c248eb] underline">SolvSpot</span>
+            </a>
           </div>
         </div>
       </footer>
